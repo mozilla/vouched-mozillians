@@ -1,5 +1,0 @@
-[run]
-source = mozillians
-
-[report]
-omit = */migrations/*
