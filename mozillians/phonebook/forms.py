@@ -2,33 +2,32 @@ import re
 from cStringIO import StringIO
 from datetime import datetime
 
+from pytz import common_timezones
+
+import django_filters
+import happyforms
+from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import RadioSelect
-from django.utils.translation import ugettext as _, ugettext_lazy as _lazy
-
-import django_filters
-import happyforms
-from dal import autocomplete
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _lazy
 from haystack.forms import ModelSearchForm as HaystackSearchForm
 from haystack.query import SQ, SearchQuerySet
-from nocaptcha_recaptcha.fields import NoReCaptchaField
-from pytz import common_timezones
-from PIL import Image
-
 from mozillians.api.models import APIv2App
 from mozillians.common.urlresolvers import reverse
-from mozillians.groups.models import Group
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.validators import validate_username
 from mozillians.phonebook.widgets import MonthYearWidget
 from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import PUBLIC
-from mozillians.users.models import AbuseReport, ExternalAccount, IdpProfile, Language, UserProfile
+from mozillians.users.models import (AbuseReport, ExternalAccount, IdpProfile,
+                                     Language, UserProfile)
 from mozillians.users.search_indexes import IdpProfileIndex, UserProfileIndex
-
+from nocaptcha_recaptcha.fields import NoReCaptchaField
+from PIL import Image
 
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
 
@@ -312,24 +311,6 @@ class ContributionForm(happyforms.ModelForm):
                   'story_link', 'privacy_story_link',)
 
 
-class TshirtForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('tshirt', 'privacy_tshirt',)
-
-
-class GroupsPrivacyForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('privacy_groups',)
-
-
-class IRCForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('ircname', 'privacy_ircname',)
-
-
 class BaseLanguageFormSet(BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
@@ -365,44 +346,6 @@ class EmailForm(happyforms.Form):
         return self.cleaned_data['email'] != self.initial['email']
 
 
-class RegisterForm(BasicInformationForm, LocationForm):
-    optin = forms.BooleanField(
-        widget=forms.CheckboxInput(attrs={'class': 'checkbox'}),
-        required=True)
-    captcha = NoReCaptchaField()
-
-    class Meta:
-        model = UserProfile
-        fields = ('photo', 'full_name', 'timezone', 'privacy_photo', 'privacy_full_name', 'optin',
-                  'privacy_timezone', 'privacy_city', 'privacy_region', 'privacy_country',
-                  'country', 'region', 'city',)
-        widgets = {
-            'country': autocomplete.ModelSelect2(
-                url='users:country-autocomplete',
-                attrs={
-                    'data-placeholder': u'Start typing to select a country.',
-                    'data-minimum-input-length': 2
-                }
-            ),
-            'region': autocomplete.ModelSelect2(
-                url='users:region-autocomplete',
-                forward=['country'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a region.',
-                    'data-minimum-input-length': 3
-                }
-            ),
-            'city': autocomplete.ModelSelect2(
-                url='users:city-autocomplete',
-                forward=['country', 'region'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a city.',
-                    'data-minimum-input-length': 3
-                }
-            )
-        }
-
-
 class VouchForm(happyforms.Form):
     """Vouching is captured via a user's id and a description of the reason for vouching."""
     description = forms.CharField(
@@ -431,26 +374,6 @@ class InviteForm(happyforms.ModelForm):
     class Meta:
         model = Invite
         fields = ['recipient']
-
-
-class APIKeyRequestForm(happyforms.ModelForm):
-
-    class Meta:
-        model = APIv2App
-        fields = ('name', 'description', 'url',)
-
-
-class AbuseReportForm(happyforms.ModelForm):
-
-    class Meta:
-        model = AbuseReport
-        fields = ('type',)
-        widgets = {
-            'type': RadioSelect
-        }
-        labels = {
-            'type': _(u'What would you like to report?')
-        }
 
 
 class PhonebookSearchForm(HaystackSearchForm):

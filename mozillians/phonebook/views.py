@@ -37,11 +37,8 @@ from mozillians.common.templatetags.helpers import (get_object_or_none,
                                                     urlparams)
 from mozillians.common.urlresolvers import reverse
 from mozillians.groups.models import Group
-from mozillians.phonebook.models import Invite
-from mozillians.phonebook.utils import redeem_invite
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
-from mozillians.users.models import (AbuseReport, ExternalAccount, IdpProfile,
-                                     UserProfile)
+from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
 from raven.contrib.django.models import client
 
 ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
@@ -121,49 +118,10 @@ def view_profile(request, username):
             profile.set_instance_privacy_level(
                 request.user.userprofile.privacy_level)
 
-        if (request.user.is_authenticated() and request.user.userprofile.is_vouched
-                and not profile.is_vouched):
-            abuse_report = get_object_or_none(AbuseReport, reporter=request.user.userprofile,
-                                              profile=profile)
-
-            if not abuse_report:
-                abuse_report = AbuseReport(reporter=request.user.userprofile, profile=profile)
-
-            abuse_form = forms.AbuseReportForm(request.POST or None, instance=abuse_report)
-            if abuse_form.is_valid():
-                abuse_form.save()
-                msg = _(u'Thanks for helping us improve mozillians.org!')
-                messages.info(request, msg)
-                return redirect('phonebook:profile_view', profile.user.username)
-
-        if (request.user.is_authenticated() and profile.is_vouchable(request.user.userprofile)):
-
-            vouch_form = forms.VouchForm(request.POST or None)
-            data['vouch_form'] = vouch_form
-            if vouch_form.is_valid():
-                # We need to re-fetch profile from database.
-                profile = UserProfile.objects.get(user__username=username)
-                profile.vouch(request.user.userprofile, vouch_form.cleaned_data['description'])
-                # Notify the current user that they vouched successfully.
-                msg = _(u'Thanks for vouching for a fellow Mozillian! This user is now vouched!')
-                messages.info(request, msg)
-                return redirect('phonebook:profile_view', profile.user.username)
-
     data['shown_user'] = profile.user
     data['profile'] = profile
-    data['access_groups'] = profile.get_annotated_access_groups()
-    data['tags'] = profile.get_annotated_tags()
-    data['abuse_form'] = abuse_form
     data['primary_identity'] = profile.identity_profiles.filter(primary_contact_identity=True)
     data['alternate_identities'] = profile.identity_profiles.filter(primary_contact_identity=False)
-
-    # Only show pending groups if user is looking at their own profile,
-    # or current user is a superuser
-    if not (request.user.is_authenticated()
-            and (request.user.username == username or request.user.is_superuser)):
-        data['access_groups'] = [grp for grp in data['access_groups']
-                                 if not (grp.pending or grp.pending_terms)]
-        data['tags'] = [tag for tag in data['tags'] if not (tag.pending or tag.pending_terms)]
 
     return render(request, 'phonebook/profile.html', data)
 
@@ -175,24 +133,18 @@ def edit_profile(request):
     # Don't use request.user
     user = User.objects.get(pk=request.user.id)
     profile = user.userprofile
-    user_groups = profile.groups.all().order_by('name')
     idp_profiles = IdpProfile.objects.filter(profile=profile)
     idp_primary_profile = get_object_or_none(IdpProfile, profile=profile, primary=True)
     # The accounts that a user can select as the primary login identity
     accounts_qs = ExternalAccount.objects.exclude(type=ExternalAccount.TYPE_EMAIL)
 
     sections = {
-        'registration_section': ['user_form', 'registration_form'],
         'basic_section': ['user_form', 'basic_information_form'],
-        'groups_section': ['groups_privacy_form'],
-        'skills_section': ['skills_form'],
         'idp_section': ['idp_profile_formset'],
         'languages_section': ['language_privacy_form', 'language_formset'],
         'accounts_section': ['accounts_formset'],
         'location_section': ['location_form'],
-        'irc_section': ['irc_form'],
         'contribution_section': ['contribution_form'],
-        'tshirt_section': ['tshirt_form'],
     }
 
     curr_sect = next((s for s in sections.keys() if s in request.POST), None)
@@ -204,9 +156,6 @@ def edit_profile(request):
 
     ctx = {}
     ctx['user_form'] = forms.UserForm(get_request_data('user_form'), instance=user)
-    ctx['registration_form'] = forms.RegisterForm(get_request_data('registration_form'),
-                                                  request.FILES or None,
-                                                  instance=profile)
     basic_information_data = get_request_data('basic_information_form')
     ctx['basic_information_form'] = forms.BasicInformationForm(basic_information_data,
                                                                request.FILES or None,
@@ -221,19 +170,13 @@ def edit_profile(request):
     language_privacy_data = get_request_data('language_privacy_form')
     ctx['language_privacy_form'] = forms.LanguagesPrivacyForm(language_privacy_data,
                                                               instance=profile)
-    ctx['skills_form'] = forms.SkillsForm(get_request_data('skills_form'), instance=profile)
     ctx['contribution_form'] = forms.ContributionForm(get_request_data('contribution_form'),
                                                       instance=profile)
-    ctx['tshirt_form'] = forms.TshirtForm(get_request_data('tshirt_form'), instance=profile)
-    ctx['groups_privacy_form'] = forms.GroupsPrivacyForm(get_request_data('groups_privacy_form'),
-                                                         instance=profile)
-    ctx['irc_form'] = forms.IRCForm(get_request_data('irc_form'), instance=profile)
     ctx['idp_profile_formset'] = forms.IdpProfileFormset(get_request_data('idp_profile_formset'),
                                                          instance=profile,
                                                          queryset=idp_profiles)
     ctx['idp_primary_profile'] = idp_primary_profile
 
-    ctx['autocomplete_form_media'] = ctx['registration_form'].media + ctx['skills_form'].media
     forms_valid = True
     if request.POST:
         if not curr_sect:
@@ -245,43 +188,15 @@ def edit_profile(request):
             for f in curr_forms:
                 f.save()
 
-            # Spawn task to check for spam
-            if not profile.is_vouched:
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    user_ip = x_forwarded_for.split(',')[0]
-                else:
-                    user_ip = request.META.get('REMOTE_ADDR')
-
-                params = {
-                    'instance_id': profile.id,
-                    'user_ip': user_ip,
-                    'user_agent': request.META.get('HTTP_USER_AGENT'),
-                    'referrer': request.META.get('HTTP_REFERER'),
-                    'comment_author': profile.full_name,
-                    'comment_author_email': profile.email,
-                    'comment_content': profile.bio
-                }
-
             next_section = request.GET.get('next')
             next_url = urlparams(reverse('phonebook:profile_edit'), next_section)
-            if curr_sect == 'registration_section':
-                settings_url = reverse('phonebook:profile_edit')
-                settings_link = '<a href="{0}">settings</a>'.format(settings_url)
-                msg = _(u'Your registration is complete. '
-                        u'Feel free to visit the {0} page to add '
-                        u'additional information to your profile.'.format(settings_link))
-                messages.info(request, mark_safe(msg))
-                redeem_invite(profile, request.session.get('invite-code'))
-                next_url = reverse('phonebook:profile_view', args=[user.username])
-            elif user.username != old_username:
+            if user.username != old_username:
                 msg = _(u'You changed your username; '
                         u'please note your profile URL has also changed.')
                 messages.info(request, _(msg))
             return HttpResponseRedirect(next_url)
 
     ctx.update({
-        'user_groups': user_groups,
         'profile': request.user.userprofile,
         'vouch_threshold': settings.CAN_VOUCH_THRESHOLD,
         'appsv2': profile.apps.filter(enabled=True),
@@ -358,47 +273,6 @@ def delete(request):
     return logout(request)
 
 
-def invite(request):
-    profile = request.user.userprofile
-    invite_form = None
-    vouch_form = None
-    if profile.can_vouch:
-        invite_form = forms.InviteForm(request.POST or None,
-                                       instance=Invite(inviter=profile))
-        vouch_form = forms.VouchForm(request.POST or None)
-
-    if invite_form and vouch_form and invite_form.is_valid() and vouch_form.is_valid():
-        invite_form.instance.reason = vouch_form.cleaned_data['description']
-        invite = invite_form.save()
-        invite.send(sender=profile, personal_message=invite_form.cleaned_data['message'])
-        msg = _(u"%s has been invited to Mozillians. They'll receive an email "
-                u"with instructions on how to join. You can "
-                u"invite another Mozillian if you like.") % invite.recipient
-        messages.success(request, msg)
-        return redirect('phonebook:invite')
-
-    return render(request, 'phonebook/invite.html',
-                  {
-                      'invite_form': invite_form,
-                      'vouch_form': vouch_form,
-                      'invites': profile.invites.all(),
-                      'vouch_threshold': settings.CAN_VOUCH_THRESHOLD,
-                  })
-
-
-@require_POST
-def delete_invite(request, invite_pk):
-    profile = request.user.userprofile
-    deleted_invite = get_object_or_404(Invite, pk=invite_pk, inviter=profile, redeemed=None)
-    deleted_invite.delete()
-
-    msg = (_(u"%s's invitation to Mozillians has been revoked. "
-             u"You can invite %s again if you like.") %
-            (deleted_invite.recipient, deleted_invite.recipient))
-    messages.success(request, msg)
-    return redirect('phonebook:invite')
-
-
 def apikeys(request):
     profile = request.user.userprofile
     apikey_request_form = forms.APIKeyRequestForm(
@@ -430,26 +304,6 @@ def delete_apikey(request, api_pk):
 def logout(request):
     """View that logs out the user and redirects to home page."""
     auth_logout(request)
-    return redirect('phonebook:home')
-
-
-@allow_public
-def register(request):
-    """Registers Users.
-
-    Pulls out an invite code if it exists and auto validates the user
-    if so. Single-purpose view.
-    """
-    # TODO already vouched users can be re-vouched?
-    if 'code' in request.GET:
-        request.session['invite-code'] = request.GET['code']
-        if request.user.is_authenticated():
-            if not request.user.userprofile.is_vouched:
-                redeem_invite(request.user.userprofile, request.session['invite-code'])
-        else:
-            messages.info(request, _("You've been invited to join Mozillians.org! "
-                                     "Sign in and then you can create a profile."))
-
     return redirect('phonebook:home')
 
 

@@ -7,15 +7,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as django_reverse
-from django.http import HttpResponsePermanentRedirect, HttpResponseRedirect, HttpResponse
+from django.http import (HttpResponse, HttpResponsePermanentRedirect,
+                         HttpResponseRedirect)
 from django.utils.encoding import iri_to_uri, smart_str
-
-from django.utils.translation import ugettext_lazy as _lazy, activate
-
+from django.utils.translation import activate
+from django.utils.translation import ugettext_lazy as _lazy
 from mozillians.common import urlresolvers
 from mozillians.common.templatetags.helpers import redirect, urlparams
 from mozillians.common.urlresolvers import reverse
-
 
 LOGIN_MESSAGE = _lazy(u'You must be logged in to continue.')
 GET_VOUCHED_MESSAGE = _lazy(u'You must be vouched to continue.')

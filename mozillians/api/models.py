@@ -3,9 +3,7 @@ import uuid
 from hashlib import sha1
 
 from django.db import models
-
 from django.utils.translation import ugettext_lazy as _lazy
-
 from mozillians.users.managers import PRIVACY_CHOICES, PRIVATE, PUBLIC
 from mozillians.users.models import PrivacyField, UserProfile
 

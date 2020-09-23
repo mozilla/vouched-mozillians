@@ -8,8 +8,7 @@
         {% if (basic_information_form.non_field_errors()
                or user_form.non_field_errors()
                or language_formset.non_form_errors()
-               or idp_profile_formset.non_form_errors()
-               or skills_form.non_field_errors()) %}
+               or idp_profile_formset.non_form_errors()) %}
           <ul class="unstyled">
             {% for error in basic_information_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
@@ -21,9 +20,6 @@
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
             {% for error in idp_profile_formset.non_form_errors() %}
-              <li class="alert alert-error">{{ error }}</li>
-            {% endfor %}
-            {% for error in skills_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
           </ul>
@@ -173,45 +169,6 @@
       <div class="panel-footer">
         <button class="btn btn-primary" id="form-submit-identity" type="submit"
                 name="idp_section">{{ _('Update Identities') }}
-        </button>
-      </div>
-    </div>
-  </form>
-
-  <form class="edit-profile" method="POST" action="{{ url('phonebook:profile_edit') }}?next=profile">
-    {% csrf_token %}
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        {{ _('Skills') }}
-      </div>
-      <div class="panel-body">
-        <fieldset>
-          <div class="row">
-            <div class="col-sm-8">
-              <p class="field_description">
-                {% trans %}
-                  A skill is the learned capacity to carry out pre-determined
-                  results often with the minimum outlay of time, energy, or
-                  both.
-                {% endtrans %}
-              </p>
-            </div>
-            <div class="col-sm-4 text-right">
-              {{ privacy_field(skills_form.privacy_skills) }}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              <fieldset id="skills">
-                {{ mozillians_field(skills_form.skills) }}
-              </fieldset>
-            </div>
-          </div>
-        </fieldset>
-      </div>
-      <div class="panel-footer">
-        <button class="btn btn-primary" id="form-submit-skills" type="submit"
-                name="skills_section">{{ _('Update Skills') }}
         </button>
       </div>
     </div>

@@ -93,7 +93,6 @@ MIDDLEWARE = [
 
     'csp.middleware.CSPMiddleware',
 
-    'mozillians.phonebook.middleware.RegisterMiddleware',
     'mozillians.phonebook.middleware.UsernameRedirectionMiddleware'
 ]
 

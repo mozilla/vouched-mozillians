@@ -6,40 +6,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import is_valid_path, reverse
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext as _
-
-from mozillians.common.templatetags.helpers import redirect
 from mozillians.common.middleware import safe_query_string
-
-
-class RegisterMiddleware(object):
-    """Redirect authenticated users with incomplete profile to register view."""
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        user = request.user
-        path = request.path
-
-        allow_urls = [
-            r'^/[\w-]+{0}'.format(reverse('phonebook:logout')),
-            r'^/[\w-]+{0}'.format(reverse('phonebook:login')),
-            r'^/[\w-]+{0}'.format(reverse('phonebook:profile_edit')),
-            r'^/[\w-]+{0}'.format(reverse('groups:skills-autocomplete')),
-            r'^/[\w-]+{0}'.format(reverse('users:country-autocomplete')),
-            r'^/[\w-]+{0}'.format(reverse('users:region-autocomplete')),
-            r'^/[\w-]+{0}'.format(reverse('users:city-autocomplete')),
-            r'^/[\w-]+{0}'.format(reverse('users:timezone-autocomplete')),
-        ]
-
-        if settings.DEBUG:
-            allow_urls.append(settings.MEDIA_URL)
-
-        if (user.is_authenticated() and not user.userprofile.is_complete and not
-                filter(lambda url: re.match(url, path), allow_urls)):
-            messages.warning(request, _('Please complete registration before proceeding.'))
-            return redirect('phonebook:profile_edit')
-        return self.get_response(request)
+from mozillians.common.templatetags.helpers import redirect
 
 
 class UsernameRedirectionMiddleware(object):

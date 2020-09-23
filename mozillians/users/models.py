@@ -774,9 +774,6 @@ class UserProfile(UserProfilePrivacyModel):
         # Auto_vouch follows the first save, because you can't
         # create foreign keys without a database id.
 
-        if self.is_complete:
-            send_userprofile_to_cis.delay(self.pk)
-
         if autovouch:
             self.auto_vouch()
 
