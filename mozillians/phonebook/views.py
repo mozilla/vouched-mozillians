@@ -57,24 +57,6 @@ def home(request):
     return render(request, 'phonebook/home.html')
 
 
-@allow_unvouched
-@never_cache
-def vouch(request, username):
-    """Automatically vouch username.
-
-    """
-    raise Http404
-
-
-@allow_unvouched
-@never_cache
-def unvouch(request, username):
-    """Automatically remove all vouches from username.
-
-    """
-    raise Http404
-
-
 @allow_public
 @never_cache
 def view_profile(request, username):
@@ -83,7 +65,6 @@ def view_profile(request, username):
     privacy_mappings = {'anonymous': PUBLIC, 'mozillian': MOZILLIANS, 'employee': EMPLOYEES,
                         'private': PRIVATE, 'myself': None}
     privacy_level = None
-    abuse_form = None
 
     if (request.user.is_authenticated() and request.user.username == username):
         # own profile
@@ -141,7 +122,6 @@ def edit_profile(request):
     sections = {
         'basic_section': ['user_form', 'basic_information_form'],
         'idp_section': ['idp_profile_formset'],
-        'languages_section': ['language_privacy_form', 'language_formset'],
         'accounts_section': ['accounts_formset'],
         'location_section': ['location_form'],
         'contribution_section': ['contribution_form'],
@@ -164,12 +144,6 @@ def edit_profile(request):
                                                     instance=profile,
                                                     queryset=accounts_qs)
     ctx['location_form'] = forms.LocationForm(get_request_data('location_form'), instance=profile)
-    ctx['language_formset'] = forms.LanguagesFormset(get_request_data('language_formset'),
-                                                     instance=profile,
-                                                     locale=request.locale)
-    language_privacy_data = get_request_data('language_privacy_form')
-    ctx['language_privacy_form'] = forms.LanguagesPrivacyForm(language_privacy_data,
-                                                              instance=profile)
     ctx['contribution_form'] = forms.ContributionForm(get_request_data('contribution_form'),
                                                       instance=profile)
     ctx['idp_profile_formset'] = forms.IdpProfileFormset(get_request_data('idp_profile_formset'),
@@ -371,191 +345,6 @@ class PhonebookSearchView(SearchView):
         context_data['region'] = self.kwargs.get('region')
         context_data['city'] = self.kwargs.get('city')
         return context_data
-
-
-# Verify additional identities
-class VerifyIdentityView(OIDCAuthenticationRequestView):
-
-    def __init__(self, *args, **kwargs):
-        """Override the init method to dynamically pass a different client_id."""
-        self.OIDC_RP_VERIFICATION_CLIENT_ID = (
-            import_from_settings('OIDC_RP_VERIFICATION_CLIENT_ID')
-        )
-        super(VerifyIdentityView, self).__init__(*args, **kwargs)
-
-    def get(self, request):
-        """OIDC client authentication initialization HTTP endpoint.
-
-        This is based on the mozilla-django-oidc library
-        """
-        state = get_random_string(import_from_settings('OIDC_STATE_SIZE', 32))
-        redirect_field_name = import_from_settings('OIDC_REDIRECT_FIELD_NAME', 'next')
-
-        params = {
-            'response_type': 'code',
-            'scope': import_from_settings('OIDC_RP_SCOPES', 'openid email profile'),
-            'client_id': self.OIDC_RP_VERIFICATION_CLIENT_ID,
-            'redirect_uri': absolutify(
-                request,
-                nonprefixed_url('phonebook:verify_identity_callback')
-            ),
-            'state': state
-        }
-
-        if import_from_settings('OIDC_USE_NONCE', True):
-            nonce = get_random_string(import_from_settings('OIDC_NONCE_SIZE', 32))
-            params.update({
-                'nonce': nonce
-            })
-            request.session['oidc_verify_nonce'] = nonce
-
-        # Add parameter to disable silent authentication and the LDAP check for AUTO_VOUCH_DOMAINS
-        # This will allow users to verify AUTO_VOUCH_DOMAINS as contact identities
-        params['account_verification'] = settings.OIDC_ACCOUNT_LINKING
-
-        request.session['oidc_verify_state'] = state
-        request.session['oidc_login_next'] = get_next_url(request, redirect_field_name)
-
-        query = urlencode(params)
-        redirect_url = '{url}?{query}'.format(url=self.OIDC_OP_AUTH_ENDPOINT, query=query)
-        return HttpResponseRedirect(redirect_url)
-
-
-class VerifyIdentityCallbackView(View):
-
-    def __init__(self, *args, **kwargs):
-        """Initialize settings."""
-        self.OIDC_OP_TOKEN_ENDPOINT = import_from_settings('OIDC_OP_TOKEN_ENDPOINT')
-        self.OIDC_OP_USER_ENDPOINT = import_from_settings('OIDC_OP_USER_ENDPOINT')
-        self.OIDC_RP_VERIFICATION_CLIENT_ID = (
-            import_from_settings('OIDC_RP_VERIFICATION_CLIENT_ID')
-        )
-        self.OIDC_RP_VERIFICATION_CLIENT_SECRET = (
-            import_from_settings('OIDC_RP_VERIFICATION_CLIENT_SECRET')
-        )
-
-    def get(self, request):
-        """Callback handler for OIDC authorization code flow.
-
-        This is based on the mozilla-django-oidc library.
-        This callback is used to verify the identity added by the user.
-        Users are already logged in and we do not care about authentication.
-        The JWT token is used to prove the identity of the user.
-        """
-
-        profile = request.user.userprofile
-        # This is a difference nonce than the one used to login!
-        nonce = request.session.get('oidc_verify_nonce')
-        if nonce:
-            # Make sure that nonce is not used twice
-            del request.session['oidc_verify_nonce']
-
-        # Check for all possible errors and display a message to the user.
-        errors = [
-            'code' not in request.GET,
-            'state' not in request.GET,
-            'oidc_verify_state' not in request.session,
-            not request.GET.get('state')
-            or request.GET['state'] != request.session['oidc_verify_state']
-        ]
-        if any(errors):
-            msg = 'Something went wrong, account verification failed.'
-            messages.error(request, msg)
-            return redirect('phonebook:profile_edit')
-
-        token_payload = {
-            'client_id': self.OIDC_RP_VERIFICATION_CLIENT_ID,
-            'client_secret': self.OIDC_RP_VERIFICATION_CLIENT_SECRET,
-            'grant_type': 'authorization_code',
-            'code': request.GET['code'],
-            'redirect_uri': absolutify(
-                self.request,
-                nonprefixed_url('phonebook:verify_identity_callback')
-            ),
-        }
-        response = requests.post(self.OIDC_OP_TOKEN_ENDPOINT,
-                                 data=token_payload,
-                                 verify=import_from_settings('OIDC_VERIFY_SSL', True))
-        response.raise_for_status()
-        token_response = response.json()
-        id_token = token_response.get('id_token')
-
-        # Verify JWT
-        jws = JWS.from_compact(force_bytes(id_token))
-        jwk = JWK.load(smart_bytes(self.OIDC_RP_VERIFICATION_CLIENT_SECRET))
-        verified_token = None
-        if jws.verify(jwk):
-            verified_token = jws.payload
-
-        # Create the new Identity Profile.
-        if verified_token:
-            user_info = json.loads(verified_token)
-            email = user_info['email']
-            verification_user_id = user_info.get(ORIGINAL_CONNECTION_USER_ID)
-            msg = ''
-
-            if not user_info.get('email_verified'):
-                msg = 'Account verification failed: Email is not verified.'
-
-            if not verification_user_id:
-                msg = 'Account verification failed: Could not get original user id'
-
-            if msg:
-                messages.error(request, msg)
-                return redirect('phonebook:profile_edit')
-
-            user_q = {
-                'auth0_user_id': verification_user_id,
-                'email': email
-            }
-
-            # If we are linking GitHub we need to save
-            # the username too.
-            if 'github|' in verification_user_id:
-                user_q['username'] = user_info['nickname']
-
-            # Check that the identity doesn't exist in another Identity profile
-            # or in another mozillians profile
-            error_msg = ''
-            if IdpProfile.objects.filter(**user_q).exists():
-                error_msg = 'Account verification failed: Identity already exists.'
-            elif User.objects.filter(email__iexact=email).exclude(pk=profile.user.pk).exists():
-                error_msg = 'The email in this identity is used by another user.'
-            if error_msg:
-                messages.error(request, error_msg)
-                next_url = self.request.session.get('oidc_login_next', None)
-                return HttpResponseRedirect(next_url or reverse('phonebook:profile_edit'))
-
-            # Save the new identity to the IdpProfile
-            user_q['profile'] = profile
-            idp, created = IdpProfile.objects.get_or_create(**user_q)
-
-            current_idp = get_object_or_none(IdpProfile, profile=profile, primary=True)
-            # The new identity is stronger than the one currently used. Let's swap
-            append_msg = ''
-            # We need to check for equality too in the case a user updates the primary email in
-            # the same identity (matching auth0_user_id). If there is an addition of the same type
-            # we are not swapping login identities
-            if ((current_idp and current_idp.type < idp.type)
-                or (current_idp and current_idp.auth0_user_id == idp.auth0_user_id)
-                    or (not current_idp and created and idp.type >= IdpProfile.PROVIDER_GITHUB)):
-                IdpProfile.objects.filter(profile=profile).exclude(pk=idp.pk).update(primary=False)
-                idp.primary = True
-                idp.save()
-                User.objects.filter(pk=profile.user.id).update(email=idp.email)
-                append_msg = ' You need to use this identity the next time you will login.'
-
-            if created:
-                msg = 'Account successfully verified.'
-                if append_msg:
-                    msg += append_msg
-                messages.success(request, msg)
-            else:
-                msg = 'Account verification failed: Identity already exists.'
-                messages.error(request, msg)
-
-        next_url = self.request.session.get('oidc_login_next', None)
-        return HttpResponseRedirect(next_url or reverse('phonebook:profile_edit'))
 
 
 @allow_unvouched

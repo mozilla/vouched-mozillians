@@ -14,15 +14,12 @@ from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 from mozillians.common.templatetags.helpers import get_datetime
 from mozillians.groups.admin import BaseGroupMembershipAutocompleteForm
-from mozillians.groups.models import GroupMembership, Skill
-from mozillians.users.admin_forms import (AbuseReportAutocompleteForm,
-                                          AlternateEmailForm,
+from mozillians.users.admin_forms import (AlternateEmailForm,
                                           UserProfileAdminForm,
                                           VouchAutocompleteForm)
-from mozillians.users.models import (PUBLIC, AbuseReport, ExternalAccount,
-                                     IdpProfile, Language, UsernameBlacklist,
-                                     UserProfile, Vouch,
-                                     get_languages_for_locale)
+from mozillians.users.models import (PUBLIC, ExternalAccount, IdpProfile,
+                                     Language, UsernameBlacklist, UserProfile,
+                                     Vouch, get_languages_for_locale)
 from sorl.thumbnail.admin import AdminImageMixin
 
 admin.site.unregister(Group)
@@ -194,60 +191,6 @@ class LegacyVouchFilter(SimpleListFilter):
         return queryset
 
 
-class NDAMemberFilter(SimpleListFilter):
-    """Admin filter for profiles member of the NDA group"""
-    title = "NDA member"
-    parameter_name = 'nda_member'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'No'),
-                ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        from mozillians.groups.models import Group, GroupMembership
-
-        try:
-            group = Group.objects.get(name=settings.NDA_GROUP)
-        except Group.DoesNotExist:
-            return queryset
-
-        memberships = GroupMembership.objects.filter(group=group, status=GroupMembership.MEMBER)
-        profile_ids = memberships.values_list('userprofile__id', flat=True)
-
-        if self.value() == 'False':
-            return queryset.exclude(id__in=profile_ids)
-        elif self.value() == 'True':
-            return queryset.filter(id__in=profile_ids)
-        return queryset
-
-
-class NDAStaffMemberFilter(SimpleListFilter):
-    """Admin filter for profiles member of the staff NDA group"""
-    title = "NDA Staff member"
-    parameter_name = 'nda_member'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'No'),
-                ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        from mozillians.groups.models import Group, GroupMembership
-
-        try:
-            group = Group.objects.get(name=settings.NDA_STAFF_GROUP)
-        except Group.DoesNotExist:
-            return queryset
-
-        memberships = GroupMembership.objects.filter(group=group, status=GroupMembership.MEMBER)
-        profile_ids = memberships.values_list('userprofile__id', flat=True)
-
-        if self.value() == 'False':
-            return queryset.exclude(id__in=profile_ids)
-        elif self.value() == 'True':
-            return queryset.filter(id__in=profile_ids)
-        return queryset
-
-
 class MissingCountry(SimpleListFilter):
     """Admin filter for profiles missing country information"""
     title = 'Missing country'
@@ -361,23 +304,12 @@ class LanguageAdmin(admin.ModelAdmin):
 admin.site.register(Language, LanguageAdmin)
 
 
-class SkillInline(admin.TabularInline):
-    model = Skill
-    extra = 1
-
-
 class UserMembershipAutocompleteForm(BaseGroupMembershipAutocompleteForm):
 
     class Meta:
         widgets = {
             'group': autocomplete.ModelSelect2(url='groups:group-autocomplete'),
         }
-
-
-class GroupMembershipInline(admin.TabularInline):
-    model = GroupMembership
-    extra = 1
-    form = UserMembershipAutocompleteForm
 
 
 class LanguageInline(admin.TabularInline):
@@ -409,17 +341,17 @@ class AlternateEmailInline(admin.TabularInline):
 
 
 class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
-    inlines = [LanguageInline, GroupMembershipInline, ExternalAccountInline,
+    inlines = [LanguageInline, ExternalAccountInline,
                AlternateEmailInline]
-    search_fields = ['full_name', 'user__email', 'user__username', 'ircname',
+    search_fields = ['full_name', 'user__email', 'user__username',
                      'country__name', 'region__name', 'city__name', 'is_staff']
     readonly_fields = ['date_vouched', 'vouched_by', 'user', 'date_joined', 'last_login',
-                       'is_vouched', 'can_vouch', 'referral_source']
+                       'is_vouched', 'can_vouch']
     form = UserProfileAdminForm
     list_filter = ['is_vouched', 'can_vouch', DateJoinedFilter,
                    LastLoginFilter, LegacyVouchFilter, SuperUserFilter,
                    CompleteProfileFilter, PublicProfileFilter, AlternateEmailFilter,
-                   NDAMemberFilter, MissingCountry, MissingRegion,
+                   MissingCountry, MissingRegion,
                    MissingCity, 'externalaccount__type']
     save_on_top = True
     list_display = ['full_name', 'email', 'username', 'country', 'is_vouched', 'can_vouch',
@@ -433,7 +365,7 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
                        'auth0_user_id', 'is_staff',)
         }),
         (None, {
-            'fields': ('title', 'bio', 'tshirt', 'ircname', 'date_mozillian',)
+            'fields': ('title', 'bio', 'date_mozillian',)
         }),
         ('Important dates', {
             'fields': ('date_joined', 'last_login')
@@ -452,9 +384,6 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
                        'privacy_date_mozillian', 'privacy_timezone',
                        'privacy_tshirt', 'privacy_title'),
             'classes': ('collapse',)
-        }),
-        ('Skills', {
-            'fields': ('skills',)
         }),
     )
 
@@ -517,26 +446,6 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
 admin.site.register(UserProfile, UserProfileAdmin)
 
 
-class NullProfileFilter(SimpleListFilter):
-    """Admin filter for null profiles."""
-    title = 'has user profile'
-    parameter_name = 'has_user_profile'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'No'),
-                ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        if not self.value():
-            return queryset
-        value = self.value() != 'True'
-        return queryset.filter(userprofile__isnull=value)
-
-
-class UserAdmin(UserAdmin):
-    list_filter = [NullProfileFilter]
-
-
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
@@ -570,43 +479,6 @@ class ExternalAccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(ExternalAccount, ExternalAccountAdmin)
-
-
-class SkillsFilter(SimpleListFilter):
-    """Filter abuse reports based on reported profile skills."""
-    title = 'profile has skills'
-    parameter_name = 'profile_skills'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'No'),
-                ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value == 'True':
-            return queryset.filter(profile__skills__isnull=False)
-        if value == 'False':
-            return queryset.filter(profile__skills__isnull=True)
-
-
-class AbuseReportAdmin(admin.ModelAdmin):
-    form = AbuseReportAutocompleteForm
-    list_display = ['profile', 'reporter', 'type', 'created', 'updated',
-                    'profile_last_updated', 'profile_date_joined']
-    list_filter = ['type', 'is_akismet', SkillsFilter]
-    view_on_site = True
-
-    def view_on_site(self, obj):
-        return obj.profile.get_absolute_url()
-
-    def profile_last_updated(self, obj):
-        return obj.profile.last_updated
-
-    def profile_date_joined(self, obj):
-        return obj.profile.user.date_joined
-
-
-admin.site.register(AbuseReport, AbuseReportAdmin)
 
 
 class IdpProfileAdmin(admin.ModelAdmin):

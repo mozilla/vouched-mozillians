@@ -12,25 +12,15 @@ urlpatterns = [
     url(r'^user/edit/$', phonebook_views.edit_profile, name='profile_edit'),
     url(r'^u/(?P<username>[\w.@+-]+)/$', phonebook_views.view_profile, name='profile_view'),
     # Use Auth0 to verify an identity
-    url(r'^verify/identity/$', allow_unvouched(
-        login_required(phonebook_views.VerifyIdentityView.as_view())
-    ), name='verify_identity'),
-    url(r'^verify/identity/callback/$', allow_unvouched(
-        login_required(phonebook_views.VerifyIdentityCallbackView.as_view())
-    ), name='verify_identity_callback'),
     url(r'^user/delete/identity/(?P<identity_pk>\d+)/$', phonebook_views.delete_identity,
         name='delete_identity'),
     url(r'^user/primary/contact/identity/(?P<identity_pk>\d+)/$',
         phonebook_views.change_primary_contact_identity,
         name='change_primary_contact_identity'),
-    url(r'^u/(?P<username>[\w.@+-]+)/vouch/$', phonebook_views.vouch, name='profile_vouch'),
-    url(r'^u/(?P<username>[\w.@+-]+)/unvouch/$', phonebook_views.unvouch, name='profile_unvouch'),
     url(r'^confirm-delete/$', phonebook_views.confirm_delete, name='profile_confirm_delete'),
     url(r'^delete/$', phonebook_views.delete, name='profile_delete'),
     url(r'^user/delete_idp_profiles/$', phonebook_views.delete_idp_profiles,
         name='delete_idp_profiles'),
-    url(r'^apikeys/$', phonebook_views.apikeys, name='apikeys'),
-    url(r'^apikey/(?P<api_pk>\d+)/delete/$', phonebook_views.delete_apikey, name='apikey_delete'),
     # Haystack search
     url(r'^search/$', allow_public(phonebook_views.PhonebookSearchView.as_view()),
         name='haystack_search'),
