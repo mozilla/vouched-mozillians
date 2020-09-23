@@ -1,17 +1,14 @@
 import json
 import logging
+
+from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import signals
 from django.dispatch import receiver
-from django.conf import settings
-from django.contrib.auth.models import User
-
-from raven.contrib.django.raven_compat.models import client as sentry_client
-
-from mozillians.common.utils import bundle_profile_data
 from mozillians.groups.models import Group
 from mozillians.users.models import UserProfile, Vouch
-from mozillians.users.tasks import subscribe_user_to_basket, unsubscribe_from_basket_task
+from raven.contrib.django.raven_compat.models import client as sentry_client
 
 
 # Signal to create a UserProfile.
@@ -49,47 +46,6 @@ def remove_user_from_access_groups(sender, instance, **kwargs):
                 if not group.has_member(super_user):
                     group.add_member(super_user)
         group.curators.remove(instance)
-
-
-# Basket User signals
-@receiver(signals.post_save, sender=UserProfile, dispatch_uid='update_basket_sig')
-def update_basket(sender, instance, **kwargs):
-    newsletters = [settings.BASKET_VOUCHED_NEWSLETTER]
-    if instance.is_vouched:
-        subscribe_user_to_basket.delay(instance.id, newsletters)
-    else:
-        unsubscribe_from_basket_task.delay(instance.email, newsletters)
-
-
-@receiver(signals.pre_delete, sender=UserProfile, dispatch_uid='unsubscribe_from_basket_sig')
-def unsubscribe_from_basket(sender, instance, **kwargs):
-    newsletters = [settings.BASKET_VOUCHED_NEWSLETTER, settings.BASKET_NDA_NEWSLETTER]
-    unsubscribe_from_basket_task.delay(instance.email, newsletters)
-
-
-# Signals related to CIS operations
-@receiver(signals.pre_delete, sender=UserProfile, dispatch_uid='push_empty_groups_to_cis_sig')
-def push_empty_groups_to_cis(sender, instance, **kwargs):
-    """Notify CIS about the profile deletion.
-
-    Remove all the access groups and tags from the profile.
-    """
-    from mozillians.users.tasks import send_userprofile_to_cis
-    data = bundle_profile_data(instance.id, delete=True)
-
-    for d in data:
-        log_name = 'CIS group deletion - {}'.format(d['user_id'])
-        log_data = {
-            'level': logging.DEBUG,
-            'logger': 'mozillians.cis_transaction'
-        }
-        log_extra = {
-            'cis_transaction_data': json.dumps(d)
-        }
-
-        sentry_client.captureMessage(log_name, data=log_data, stack=True, extra=log_extra)
-
-    send_userprofile_to_cis.delay(profile_results=data)
 
 
 # Signals related to vouching.

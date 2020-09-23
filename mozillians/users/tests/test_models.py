@@ -3,36 +3,30 @@ import unittest
 from datetime import datetime
 from uuid import uuid4
 
+import pytz
+from mock import Mock, patch
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from django.test import override_settings
 from django.utils.timezone import make_aware, now
-
-import pytz
-from mock import Mock, patch
-from nose.tools import eq_, ok_
-
 from mozillians.common.tests import TestCase
 from mozillians.groups.models import Group, Skill
 from mozillians.groups.tests import (GroupAliasFactory, GroupFactory,
                                      SkillAliasFactory, SkillFactory)
-from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PUBLIC, PUBLIC_INDEXABLE_FIELDS)
+from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PUBLIC,
+                                       PUBLIC_INDEXABLE_FIELDS)
 from mozillians.users.models import (ExternalAccount, IdpProfile, UserProfile,
-                                     _calculate_photo_filename, Vouch)
+                                     Vouch, _calculate_photo_filename)
 from mozillians.users.tests import UserFactory
+from nose.tools import eq_, ok_
 
 
 class SignaledFunctionsTests(TestCase):
     def test_auto_create_userprofile(self):
         user = User.objects.create(email='foo@example.com', username='foobar')
         ok_(user.userprofile)
-
-    @patch('mozillians.users.signals.subscribe_user_to_basket.delay')
-    @override_settings(BASKET_VOUCHED_NEWSLETTER='foo')
-    def test_subscribe_to_basket_post_save(self, subscribe_user_mock):
-        user = UserFactory.create()
-        subscribe_user_mock.assert_called_with(user.userprofile.id, ['foo'])
 
     def test_delete_user_obj_on_profile_delete(self):
         user = UserFactory.create()
@@ -49,34 +43,6 @@ class SignaledFunctionsTests(TestCase):
         voucher.delete()
         vouch = Vouch.objects.get(vouchee=vouchee.userprofile)
         eq_(vouch.voucher, None)
-
-    @patch('mozillians.users.signals.subscribe_user_to_basket.delay')
-    @override_settings(BASKET_VOUCHED_NEWSLETTER='foo')
-    @override_settings(CAN_VOUCH_THRESHOLD=1)
-    def test_vouch_is_vouched_gets_updated(self, subscribe_user_mock):
-        voucher = UserFactory.create()
-        unvouched = UserFactory.create(vouched=False)
-
-        eq_(unvouched.userprofile.is_vouched, False)
-        unvouched.userprofile.vouch(voucher.userprofile)
-
-        # Reload from database
-        unvouched = User.objects.get(pk=unvouched.id)
-        eq_(unvouched.userprofile.is_vouched, True)
-        ok_(subscribe_user_mock.called_with(unvouched.userprofile.id, ['foo']))
-
-    @patch('mozillians.users.signals.unsubscribe_from_basket_task.delay')
-    @override_settings(BASKET_VOUCHED_NEWSLETTER='foo')
-    def test_unvouch_is_vouched_gets_updated(self, unsubscribe_from_basket_mock):
-        vouched = UserFactory.create()
-
-        eq_(vouched.userprofile.is_vouched, True)
-        vouched.userprofile.vouches_received.all().delete()
-
-        # Reload from database
-        vouched = User.objects.get(pk=vouched.id)
-        eq_(vouched.userprofile.is_vouched, False)
-        ok_(unsubscribe_from_basket_mock.called_with(vouched.userprofile.email, ['foo']))
 
     @override_settings(CAN_VOUCH_THRESHOLD=5)
     def test_vouch_can_vouch_gets_updated(self):

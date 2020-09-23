@@ -1,3 +1,4 @@
+from dal import autocomplete
 from django import forms
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
@@ -6,12 +7,6 @@ from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
-
-from dal import autocomplete
-from import_export.fields import Field
-from import_export.resources import ModelResource
-
-from mozillians.common.mixins import MozilliansAdminExportMixin
 from mozillians.groups.models import (Group, GroupAlias, GroupMembership,
                                       Invite, Skill, SkillAlias)
 from mozillians.phonebook.admin import RedeemedInviteFilter
@@ -163,7 +158,7 @@ class GroupBaseEditAdminForm(forms.ModelForm):
         return super(GroupBaseEditAdminForm, self).save(*args, **kwargs)
 
 
-class GroupBaseAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class GroupBaseAdmin(admin.ModelAdmin):
     """GroupBase Admin."""
     save_on_top = True
     search_fields = ['name', 'aliases__name', 'url', 'aliases__url']
@@ -295,19 +290,6 @@ class GroupAdmin(GroupBaseAdmin):
     get_invites.short_description = 'Invites'
 
 
-class GroupMembershipResource(ModelResource):
-    """django-import-export Groupmembership Resource."""
-    username = Field(attribute='userprofile__user__username')
-    group_name = Field(attribute='group__name')
-    email = Field()
-
-    class Meta:
-        model = GroupMembership
-
-    def dehydrate_email(self, obj):
-        return obj.userprofile.email
-
-
 class BaseGroupMembershipAutocompleteForm(forms.ModelForm):
 
     class Meta:
@@ -319,8 +301,7 @@ class BaseGroupMembershipAutocompleteForm(forms.ModelForm):
         }
 
 
-class GroupMembershipAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
-    resource_class = GroupMembershipResource
+class GroupMembershipAdmin(admin.ModelAdmin):
     list_display = ['group', 'userprofile', 'status', 'date_joined', 'updated_on']
     search_fields = [
         'group__name', 'group__url', 'group__description', 'group__aliases__name',
@@ -372,18 +353,7 @@ class InviteAutocompleteForm(forms.ModelForm):
         }
 
 
-class InviteResource(ModelResource):
-    inviter = Field(attribute='inviter__full_name')
-    redeemer = Field(attribute='redeemer__full_name')
-    group = Field(attribute='group__name')
-
-    class Meta:
-        fields = ['inviter', 'redeemer', 'group', 'accepted', 'created', 'updated']
-        model = Invite
-
-
-class InviteAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
-    resource_class = InviteResource
+class InviteAdmin(admin.ModelAdmin):
     search_fields = ['inviter__full_name', 'redeemer__full_name', 'group__name']
     list_display = ['inviter', 'redeemer', 'group', 'created', 'updated']
     readonly_fields = ['created', 'updated']

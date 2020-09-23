@@ -1,49 +1,20 @@
 import os.path
 from datetime import datetime
 
+from mock import patch
+
 from django.contrib.auth.models import User
 from django.contrib.auth.views import logout as logout_view
 from django.core.urlresolvers import reverse
 from django.test.client import Client
-from django.test.utils import override_settings, override_script_prefix
-
-from mock import patch
-from nose.tools import eq_, ok_
-from waffle.models import Flag
-
+from django.test.utils import override_script_prefix, override_settings
 from mozillians.common.tests import TestCase, requires_login, requires_vouch
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.tests import InviteFactory, _get_privacy_fields
 from mozillians.users.managers import MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import UserProfilePrivacyModel
 from mozillians.users.tests import UserFactory
-
-
-class SearchTests(TestCase):
-    def test_search_plugin_anonymous(self):
-        client = Client()
-        response = client.get(reverse('dino_park:search_plugin'), follow=True)
-        eq_(response.status_code, 200)
-        eq_(response.get('content-type'),
-            'application/opensearchdescription+xml')
-
-    def test_search_plugin_unvouched(self):
-        user = UserFactory.create(vouched=False)
-        with self.login(user) as client:
-            response = client.get(reverse('dino_park:search_plugin'),
-                                  follow=True)
-        eq_(response.status_code, 200)
-        eq_(response.get('content-type'),
-            'application/opensearchdescription+xml')
-
-    def test_search_plugin_vouched(self):
-        user = UserFactory.create()
-        with self.login(user) as client:
-            response = client.get(reverse('dino_park:search_plugin'),
-                                  follow=True)
-        eq_(response.status_code, 200)
-        eq_(response.get('content-type'),
-            'application/opensearchdescription+xml')
+from nose.tools import eq_, ok_
 
 
 class InviteTests(TestCase):

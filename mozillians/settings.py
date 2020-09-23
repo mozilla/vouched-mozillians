@@ -4,14 +4,13 @@
 import json
 import os.path
 import sys
-
-from django.utils.functional import lazy
-
-from decouple import config, Csv
-from unipath import Path
-from dj_database_url import parse as db_url
-from django_jinja.builtins import DEFAULT_EXTENSIONS
 from urlparse import urljoin
+
+from decouple import Csv, config
+from dj_database_url import parse as db_url
+from django.utils.functional import lazy
+from django_jinja.builtins import DEFAULT_EXTENSIONS
+from unipath import Path
 
 PROJECT_MODULE = 'mozillians'
 # Root path of the project
@@ -45,7 +44,6 @@ INSTALLED_APPS = (
 
     # Third-party apps, patches, fixes
     'django_jinja',
-    'puente',
     'compressor',
     'cronjobs',
     'django_nose',
@@ -56,7 +54,6 @@ INSTALLED_APPS = (
     'cities_light',
     'axes',
     'haystack',
-    'graphene_django',
 
     'mozillians',
     'mozillians.users',
@@ -69,12 +66,8 @@ INSTALLED_APPS = (
     'mozillians.announcements',
     'mozillians.humans',
     'mozillians.geo',
-    'mozillians.graphql_profiles',
-    'mozillians.dino_park',
 
     'sorl.thumbnail',
-    'import_export',
-    'waffle',
     'rest_framework',
     'django_filters',
     'raven.contrib.django.raven_compat',
@@ -100,12 +93,8 @@ MIDDLEWARE = [
 
     'csp.middleware.CSPMiddleware',
 
-    'mozillians.common.middleware.StrongholdMiddleware',
     'mozillians.phonebook.middleware.RegisterMiddleware',
-    'mozillians.phonebook.middleware.UsernameRedirectionMiddleware',
-    'mozillians.groups.middleware.OldGroupRedirectionMiddleware',
-
-    'waffle.middleware.WaffleMiddleware',
+    'mozillians.phonebook.middleware.UsernameRedirectionMiddleware'
 ]
 
 #############################
@@ -186,19 +175,6 @@ EXEMPT_L10N_URLS = [
     '^/opensearch.xml',
 ]
 
-# Tells the extract script what files to parse for strings and what functions to use.
-
-PUENTE = {
-    'BASE_DIR': ROOT.parent,
-    'DOMAIN_METHODS': {
-        'django': [
-            ('mozillians/**.py', 'python'),
-            ('mozillians/**/templates/**.html', 'django'),
-            ('mozillians/**/jinja2/**.html', 'jinja2')
-        ]
-    }
-}
-
 # Tells the product_details module where to find our local JSON files.
 # This ultimately controls how LANGUAGES are constructed.
 PROD_DETAILS_DIR = Path(config('PROD_DETAILS_DIR', default='lib/product_details_json')).resolve()
@@ -267,18 +243,6 @@ CACHES = {
     }
 }
 
-# Basket
-# If we're running tests, don't hit the real basket server.
-if 'test' in sys.argv:
-    BASKET_URL = 'http://127.0.0.1'
-else:
-    # Basket requires SSL now for some calls
-    BASKET_URL = config('BASKET_URL', default='https://basket.mozilla.org')
-
-BASKET_VOUCHED_NEWSLETTER = config('BASKET_VOUCHED_NEWSLETTER', default='mozilla-phone')
-BASKET_NDA_NEWSLETTER = config('BASKET_NDA_NEWSLETTER', default='mozillians-nda')
-BASKET_API_KEY = config('BASKET_API_KEY')
-
 # NDA Group
 NDA_GROUP = config('NDA_GROUP', default='nda')
 # TODO change this
@@ -311,17 +275,6 @@ MOZILLIANS_ADMIN_BUCKET = config('MOZILLIANS_ADMIN_BUCKET', default='')
 
 # Akismet
 AKISMET_API_KEY = config('AKISMET_API_KEY', default='')
-
-# Celery configuration
-# True says to simulate background tasks without actually using celeryd.
-# Good for local development in case celeryd is not running.
-CELERY_TASK_ALWAYS_EAGER = config('CELERY_TASK_ALWAYS_EAGER', default='False', cast=bool)
-CELERY_BROKER_URL = config('BROKER_URL', default='redis://broker:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://broker:6379/1')
-CELERY_ACCEPT_CONTENT = ['pickle', 'json']
-CELERY_TASK_SERIALIZER = config('CELERY_TASK_SERIALIZER', default='pickle')
-CELERY_TASK_RESULT_EXPIRES = config('CELERY_TASK_RESULT_EXPIRES', default=3600, cast=int)
-CELERY_SEND_TASK_ERROR_EMAILS = config('CELERY_SEND_TASK_ERROR_EMAILS', default=True, cast=bool)
 
 MESSAGE_STORAGE = config('MESSAGE_STORAGE',
                          default='django.contrib.messages.storage.session.SessionStorage')
@@ -571,9 +524,7 @@ TEMPLATES = [
             'newstyle_gettext': True,
             'undefined': 'jinja2.Undefined',
             'extensions': DEFAULT_EXTENSIONS + [
-                'compressor.contrib.jinja2ext.CompressorExtension',
-                'waffle.jinja.WaffleExtension',
-                'puente.ext.i18n',
+                'compressor.contrib.jinja2ext.CompressorExtension'
             ],
             'context_processors': COMMON_CONTEXT_PROCESSORS
         }
@@ -588,16 +539,6 @@ TEMPLATES = [
         }
     }
 ]
-
-# CIS
-CIS_IAM_ROLE_ARN = config('CIS_IAM_ROLE_ARN', default='')
-CIS_IAM_ROLE_SESSION_NAME = config('CIS_IAM_ROLE_SESSION_NAME', default='')
-CIS_AWS_REGION = config('CIS_AWS_REGION', default='')
-CIS_LAMBDA_VALIDATOR_ARN = config('CIS_LAMBDA_VALIDATOR_ARN', default='')
-CIS_ARN_MASTER_KEY = config('CIS_ARN_MASTER_KEY', default='')
-CIS_PUBLISHER_NAME = config('CIS_PUBLISHER_NAME', default='')
-CIS_FUNCTION_ARN = config('CIS_FUNCTION_ARN', default='')
-
 
 def COMPRESS_JINJA2_GET_ENVIRONMENT():
     from django.template import engines
@@ -713,7 +654,6 @@ STRONGHOLD_EXCEPTIONS = ['^%s' % MEDIA_URL, # noqa
                          '^/api/',
                          '^/oidc/authenticate/',
                          '^/oidc/callback/',
-                         '^/[\w-]+/graphql/',
                          # Allow autocomplete urls for profile registration
                          '^/[\w-]+/skills-autocomplete/',
                          '^/[\w-]+/country-autocomplete/',
@@ -733,27 +673,6 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
 }
-
-# Django Graphene
-GRAPHENE = {
-    'SCHEMA': 'mozillians.schema.schema',
-}
-
-DINO_PARK_ACTIVE = config('DINO_PARK_ACTIVE', default=False, cast=bool)
-# Provide S3 storage backend
-if DINO_PARK_ACTIVE and not DEV:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME',
-                                     default='kubernetes-mozillians-stage')
-    DEFAULT_AVATAR_PATH = config('DEFAULT_AVATAR_PATH', default=urljoin(MEDIA_URL, DEFAULT_AVATAR))
-    CSP_IMG_SRC = CSP_IMG_SRC + ('https://' + AWS_STORAGE_BUCKET_NAME + '.s3.amazonaws.com',)
-
-    # Enable seamless login middleware
-    MIDDLEWARE.append('mozillians.common.middleware.DinoParkLoginMiddleware')
-
-# Dino Park configuration
-DINO_PARK_SEARCH_SVC = config('DINO_PARK_SEARCH_SVC', default='dino-park-search-service')
-DINO_PARK_ORGCHART_SVC = config('DINO_PARK_ORGCHART_SVC', default='dino-tree-service')
 
 if DEV:
     CSP_FONT_SRC += (
@@ -784,7 +703,3 @@ if DEV:
 if DEBUG:
     for backend in TEMPLATES:
         backend['OPTIONS']['debug'] = DEBUG
-
-    GRAPHENE['MIDDLEWARE'] = [
-        'graphene_django.debug.DjangoDebugMiddleware'
-    ]

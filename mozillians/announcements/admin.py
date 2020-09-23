@@ -1,12 +1,9 @@
 from django.contrib import admin
-
+from models import Announcement
 from sorl.thumbnail.admin import AdminImageMixin
 
-from mozillians.common.mixins import MozilliansAdminExportMixin
-from models import Announcement
 
-
-class AnnouncementAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelAdmin):
+class AnnouncementAdmin(AdminImageMixin, admin.ModelAdmin):
     save_on_top = True
     readonly_fields = ['created', 'updated', 'is_published']
     search_fields = ['title']

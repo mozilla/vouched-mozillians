@@ -1,20 +1,7 @@
+from dal import autocomplete
 from django import forms
 from django.contrib import admin
-
-from dal import autocomplete
-from import_export import fields
-from import_export.resources import ModelResource
-
 from mozillians.api.models import APIv2App
-from mozillians.common.mixins import MozilliansAdminExportMixin
-
-
-class APIv2AppResource(ModelResource):
-    """APIv2App admin export resource."""
-    email = fields.Field(attribute='owner__email')
-
-    class Meta:
-        model = APIv2App
 
 
 class APIv2AppForm(forms.ModelForm):
@@ -27,7 +14,7 @@ class APIv2AppForm(forms.ModelForm):
         }
 
 
-class APIv2AppAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class APIv2AppAdmin(admin.ModelAdmin):
     """APIv2App Admin."""
     list_display = ['name', 'owner', 'owner_email', 'privacy_level', 'enabled', 'last_used']
     list_filter = ['privacy_level', 'enabled']
@@ -41,7 +28,6 @@ class APIv2AppAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
     owner_email.short_description = 'Email'
 
     form = APIv2AppForm
-    resource_class = APIv2AppResource
 
     fieldsets = (
         ('Status', {

@@ -1,13 +1,10 @@
+from dal import autocomplete
 from django import forms
 from django.contrib import admin
 from django.core.urlresolvers import reverse
-
-from dal import autocomplete
+from models import Keyword, MozSpace, Photo
 from product_details import product_details
 from sorl.thumbnail.admin import AdminImageMixin
-
-from mozillians.common.mixins import MozilliansAdminExportMixin
-from models import Keyword, MozSpace, Photo
 
 
 class KeywordAdmin(admin.StackedInline):
@@ -44,7 +41,7 @@ class MozSpaceAutocompleteForm(forms.ModelForm):
         }
 
 
-class MozSpaceAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class MozSpaceAdmin(admin.ModelAdmin):
     inlines = [PhotoAdmin, KeywordAdmin]
     search_fields = ['name']
     list_display = ['name', 'city', 'country', 'coordinator_link']

@@ -21,45 +21,6 @@ LOGIN_MESSAGE = _lazy(u'You must be logged in to continue.')
 GET_VOUCHED_MESSAGE = _lazy(u'You must be vouched to continue.')
 
 
-class StrongholdMiddleware(object):
-    """Keep unvouched users out, unless explicitly allowed in.
-
-    Inspired by https://github.com/mgrouchy/django-stronghold/
-
-    """
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-        self.exceptions = getattr(settings, 'STRONGHOLD_EXCEPTIONS', [])
-
-    def __call__(self, request):
-        return self.get_response(request)
-
-    def process_view(self, request, view_func, view_args, view_kwargs):
-        for view_url in self.exceptions:
-            if re.match(view_url, request.path):
-                return None
-
-        allow_public = getattr(view_func, '_allow_public', None)
-        if allow_public:
-            return None
-
-        if not request.user.is_authenticated():
-            messages.warning(request, LOGIN_MESSAGE)
-            return (login_required(view_func, login_url=reverse('phonebook:home'))
-                    (request, *view_args, **view_kwargs))
-
-        if request.user.userprofile.is_vouched:
-            return None
-
-        allow_unvouched = getattr(view_func, '_allow_unvouched', None)
-        if allow_unvouched:
-            return None
-
-        messages.error(request, GET_VOUCHED_MESSAGE)
-        return redirect('phonebook:home')
-
-
 @contextmanager
 def safe_query_string(request):
     """Turn the QUERY_STRING into a unicode- and ascii-safe string.

@@ -1,50 +1,48 @@
 import json
 import logging
-import requests
 from urllib import urlencode
 
+import requests
+from josepy.jwk import JWK
+from josepy.jws import JWS
+
+import mozillians.phonebook.forms as forms
 from django.conf import settings
-from django.contrib.auth.views import logout as auth_logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, Http404
+from django.contrib.auth.views import logout as auth_logout
+from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
+                         HttpResponseRedirect)
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from django.utils.encoding import force_bytes, smart_bytes
 from django.utils.safestring import mark_safe
+from django.utils.translation import ugettext as _
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import View
-
-from django.utils.translation import ugettext as _
 from haystack.generic_views import SearchView
 from haystack.query import EmptySearchQuerySet
-from josepy.jwk import JWK
-from josepy.jws import JWS
-from mozilla_django_oidc.views import OIDCAuthenticationRequestView, get_next_url
 from mozilla_django_oidc.utils import absolutify, import_from_settings
-from raven.contrib.django.models import client
-from waffle import flag_is_active
-from waffle.decorators import waffle_flag
-
+from mozilla_django_oidc.views import (OIDCAuthenticationRequestView,
+                                       get_next_url)
 from mozillians.api.models import APIv2App
 from mozillians.common.decorators import allow_public, allow_unvouched
-from mozillians.common.middleware import LOGIN_MESSAGE, GET_VOUCHED_MESSAGE
-from mozillians.common.templatetags.helpers import (get_object_or_none, nonprefixed_url, redirect,
+from mozillians.common.middleware import GET_VOUCHED_MESSAGE, LOGIN_MESSAGE
+from mozillians.common.templatetags.helpers import (get_object_or_none,
+                                                    nonprefixed_url, redirect,
                                                     urlparams)
 from mozillians.common.urlresolvers import reverse
 from mozillians.groups.models import Group
-import mozillians.phonebook.forms as forms
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.utils import redeem_invite
-from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PUBLIC, PRIVATE
-from mozillians.users.models import AbuseReport, ExternalAccount, IdpProfile, UserProfile
-from mozillians.users.tasks import (check_spam_account, send_userprofile_to_cis,
-                                    update_email_in_basket)
-
+from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
+from mozillians.users.models import (AbuseReport, ExternalAccount, IdpProfile,
+                                     UserProfile)
+from raven.contrib.django.models import client
 
 ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
 
@@ -59,18 +57,7 @@ def login(request):
 @never_cache
 @allow_public
 def home(request):
-    show_start = False
-    if request.GET.get('source', ''):
-        show_start = True
-
-    deprecation_message = ('This website will be decommissioned soon. '
-                           'Please be aware that all changes '
-                           'that you will make <b>after</b> July 27th will '
-                           'not be saved. Please visit <a href="https://people.mozilla.org">'
-                           'Mozilla People Directory</a> to perform the '
-                           'changes directly over there.')
-    messages.warning(request, mark_safe(deprecation_message))
-    return render(request, 'phonebook/home.html', {'show_start': show_start})
+    return render(request, 'phonebook/home.html')
 
 
 @allow_unvouched
@@ -78,23 +65,7 @@ def home(request):
 def vouch(request, username):
     """Automatically vouch username.
 
-    This must be behind a waffle flag and activated only for testing
-    purposes.
-
     """
-    if flag_is_active(request, 'testing-autovouch-views'):
-        profile = get_object_or_404(UserProfile, user__username=username)
-        now = timezone.now()
-        description = 'Automatically vouched for testing purposes on {0}'.format(now)
-        vouch = profile.vouch(None, description=description, autovouch=True)
-        if vouch:
-            messages.success(request, _('Successfully vouched user.'))
-        else:
-            msg = _('User not vouched. Maybe there are {0} vouches already?')
-            msg = msg.format(settings.VOUCH_COUNT_LIMIT)
-            messages.error(request, msg)
-
-        return redirect('phonebook:profile_view', profile.user.username)
     raise Http404
 
 
@@ -103,15 +74,7 @@ def vouch(request, username):
 def unvouch(request, username):
     """Automatically remove all vouches from username.
 
-    This must be behind a waffle flag and activated only for testing
-    purposes.
-
     """
-    if flag_is_active(request, 'testing-autovouch-views'):
-        profile = get_object_or_404(UserProfile, user__username=username)
-        profile.vouches_received.all().delete()
-        messages.success(request, _('Successfully unvouched user.'))
-        return redirect('phonebook:profile_view', profile.user.username)
     raise Http404
 
 
@@ -300,8 +263,6 @@ def edit_profile(request):
                     'comment_content': profile.bio
                 }
 
-                check_spam_account.delay(**params)
-
             next_section = request.GET.get('next')
             next_url = urlparams(reverse('phonebook:profile_edit'), next_section)
             if curr_sect == 'registration_section':
@@ -346,7 +307,6 @@ def delete_identity(request, identity_pk):
     if idp_query.exists():
         idp_type = idp_query[0].get_type_display()
         idp_query.delete()
-        send_userprofile_to_cis.delay(profile.pk)
         msg = _(u'Identity {0} successfully deleted.'.format(idp_type))
         messages.success(request, msg)
         return redirect('phonebook:profile_edit')
@@ -728,12 +688,9 @@ class VerifyIdentityCallbackView(View):
                 IdpProfile.objects.filter(profile=profile).exclude(pk=idp.pk).update(primary=False)
                 idp.primary = True
                 idp.save()
-                # Also update the primary email of the user
-                update_email_in_basket(profile.user.email, idp.email)
                 User.objects.filter(pk=profile.user.id).update(email=idp.email)
                 append_msg = ' You need to use this identity the next time you will login.'
 
-            send_userprofile_to_cis.delay(profile.pk)
             if created:
                 msg = 'Account successfully verified.'
                 if append_msg:
@@ -747,7 +704,6 @@ class VerifyIdentityCallbackView(View):
         return HttpResponseRedirect(next_url or reverse('phonebook:profile_edit'))
 
 
-@waffle_flag('delete-idp-profiles-qa')
 @allow_unvouched
 @never_cache
 def delete_idp_profiles(request):

@@ -1,21 +1,17 @@
-from django.core.exceptions import ValidationError
+from autoslug.fields import AutoSlugField
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
-
-from autoslug.fields import AutoSlugField
-
 from mozillians.common.templatetags.helpers import get_object_or_none
 from mozillians.common.urlresolvers import reverse
 from mozillians.common.utils import absolutify
-from mozillians.groups.managers import GroupBaseManager, GroupManager, GroupQuerySet
+from mozillians.groups.managers import (GroupBaseManager, GroupManager,
+                                        GroupQuerySet)
 from mozillians.groups.templatetags.helpers import slugify
-from mozillians.groups.tasks import email_membership_change
-from mozillians.users.tasks import (unsubscribe_from_basket_task, subscribe_user_to_basket,
-                                    send_userprofile_to_cis)
 
 
 class GroupBase(models.Model):
@@ -320,8 +316,6 @@ class Group(GroupBase):
                                                               group=self,
                                                               defaults=defaults)
 
-        send_userprofile_to_cis.delay(membership.userprofile.pk)
-
         # Remove the need_removal flag in any case
         # We have a renewal, let's save the object.
         if membership.needs_renewal:
@@ -344,14 +338,6 @@ class Group(GroupBase):
             if (old_status, status) in statuses:
                 # Status changed
                 membership.save()
-                if membership.status in [GroupMembership.PENDING, GroupMembership.MEMBER]:
-                    email_membership_change.delay(self.pk, userprofile.user.pk, old_status, status)
-
-                # Since there is no demotion, we can check if the new status is MEMBER and
-                # subscribe the user to the NDA newsletter if the group is NDA
-                if self.name == settings.NDA_GROUP and status == GroupMembership.MEMBER:
-                    subscribe_user_to_basket.delay(userprofile.id,
-                                                   [settings.BASKET_NDA_NEWSLETTER])
 
         if inviter:
             # Set the invite to the last person who renewed the membership
@@ -409,11 +395,6 @@ class Group(GroupBase):
                                 group.add_member(super_user)
                     group.curators.remove(userprofile)
                     access_membership.delete()
-                    # Notify CIS about this change
-                    send_userprofile_to_cis.delay(access_membership.userprofile.pk)
-
-            # Notify CIS about this change
-            send_userprofile_to_cis.delay(membership.userprofile.pk)
 
         # Group is either of Group.REVIEWED or Group.CLOSED, change membership to `status`
         else:
@@ -421,14 +402,6 @@ class Group(GroupBase):
             membership.status = status
             membership.needs_renewal = False
             membership.save()
-            send_email = True
-
-        # If group is the NDA group, unsubscribe user from the newsletter.
-        if self.name == settings.NDA_GROUP:
-            unsubscribe_from_basket_task.delay(userprofile.email, [settings.BASKET_NDA_NEWSLETTER])
-
-        if send_email:
-            email_membership_change.delay(self.pk, userprofile.user.pk, old_status, status)
 
     def has_member(self, userprofile):
         """

@@ -3,41 +3,40 @@ import os
 import uuid
 from itertools import chain
 
+from pytz import common_timezones
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db import models
-from django.db.models import Q, Manager, ManyToManyField
+from django.db.models import Manager, ManyToManyField, Q
+from django.template.loader import get_template
 from django.utils.encoding import iri_to_uri
 from django.utils.http import urlquote
 from django.utils.timezone import now
-from django.utils.translation import ugettext as _, ugettext_lazy as _lazy
-from django.template.loader import get_template
-
-from product_details import product_details
-from PIL import Image
-from pytz import common_timezones
-from sorl.thumbnail import ImageField, get_thumbnail
-from waffle import switch_is_active
-
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _lazy
 from mozillians.common import utils
-from mozillians.common.templatetags.helpers import absolutify, gravatar
-from mozillians.common.templatetags.helpers import offset_of_timezone
+from mozillians.common.templatetags.helpers import (absolutify, gravatar,
+                                                    offset_of_timezone)
 from mozillians.common.urlresolvers import reverse
-from mozillians.groups.models import (Group, GroupAlias, GroupMembership, Invite,
-                                      Skill, SkillAlias)
-from mozillians.phonebook.validators import (validate_email, validate_twitter,
-                                             validate_website, validate_username_not_url,
-                                             validate_phone_number, validate_linkedin,
-                                             validate_discord)
+from mozillians.groups.models import (Group, GroupAlias, GroupMembership,
+                                      Invite, Skill, SkillAlias)
+from mozillians.phonebook.validators import (validate_discord, validate_email,
+                                             validate_linkedin,
+                                             validate_phone_number,
+                                             validate_twitter,
+                                             validate_username_not_url,
+                                             validate_website)
 from mozillians.users import get_languages_for_locale
-from mozillians.users.managers import (EMPLOYEES,
-                                       MOZILLIANS, PRIVACY_CHOICES, PRIVACY_CHOICES_WITH_PRIVATE,
-                                       PRIVATE, PUBLIC, PUBLIC_INDEXABLE_FIELDS,
+from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
+                                       PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,
+                                       PUBLIC, PUBLIC_INDEXABLE_FIELDS,
                                        UserProfileQuerySet)
-from mozillians.users.tasks import send_userprofile_to_cis
-
+from PIL import Image
+from product_details import product_details
+from sorl.thumbnail import ImageField, get_thumbnail
 
 COUNTRIES = product_details.get_regions('en-US')
 AVATAR_SIZE = (300, 300)

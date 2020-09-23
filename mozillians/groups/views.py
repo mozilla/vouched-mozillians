@@ -1,33 +1,25 @@
 import json
 import re
-
 from collections import defaultdict
 
+from dal import autocomplete
 from django import http
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured
-from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.cache import cache_control, never_cache
-from django.views.decorators.http import require_POST
 from django.utils import six
 from django.utils.translation import ugettext as _
-
-from dal import autocomplete
-from waffle.decorators import waffle_flag, waffle_switch
-
+from django.views.decorators.cache import cache_control, never_cache
+from django.views.decorators.http import require_POST
 from mozillians.common.decorators import allow_unvouched
-from mozillians.common.templatetags.helpers import get_object_or_none, urlparams
+from mozillians.common.templatetags.helpers import (get_object_or_none,
+                                                    urlparams)
 from mozillians.common.urlresolvers import reverse
 from mozillians.groups import forms
 from mozillians.groups.models import Group, GroupMembership, Invite, Skill
-from mozillians.groups.tasks import (notify_curators_invitation_accepted,
-                                     notify_curators_invitation_rejected,
-                                     notify_redeemer_invitation,
-                                     notify_redeemer_invitation_invalid,
-                                     notify_membership_renewal)
 from mozillians.users.models import UserProfile
 
 
@@ -577,9 +569,6 @@ def delete_invite(request, invite_pk):
             or request.user.userprofile.is_manager):
         redeemer = invite.redeemer
         invite.delete()
-        notify_redeemer_invitation_invalid.delay(redeemer.pk, group.pk)
-        msg = _(u'The invitation to {0} has been successfully revoked.').format(redeemer)
-        messages.success(request, msg)
         next_section = request.GET.get('next')
         next_url = urlparams(reverse('groups:group_edit', args=[group.url]), next_section)
         return http.HttpResponseRedirect(next_url)
@@ -599,9 +588,7 @@ def accept_reject_invitation(request, invite_pk, action):
             invite.group.add_member(redeemer, GroupMembership.MEMBER)
         invite.accepted = True
         invite.save()
-        notify_curators_invitation_accepted.delay(invite.pk)
     else:
-        notify_curators_invitation_rejected.delay(redeemer.pk, invite.inviter.pk, invite.group.pk)
         invite.delete()
 
     return redirect(reverse('groups:show_group', args=[invite.group.url]))
@@ -618,9 +605,6 @@ def send_invitation_email(request, invite_pk):
     if not (is_curator or is_manager):
         raise http.Http404
 
-    notify_redeemer_invitation.delay(invite.pk, invite.group.invite_email_text)
-    msg = _(u'Invitation to {0} has been sent successfully.'.format(invite.redeemer))
-    messages.success(request, msg)
     next_section = request.GET.get('next')
     next_url = urlparams(reverse('groups:group_edit', args=[invite.group.url]), next_section)
 
@@ -628,7 +612,6 @@ def send_invitation_email(request, invite_pk):
 
 
 @never_cache
-@waffle_flag('force_group_invalidation', '404')
 def force_group_invalidation(request, url, alias_model, template=''):
     """View to help test different scenarios.
 
@@ -652,14 +635,3 @@ def force_group_invalidation(request, url, alias_model, template=''):
         raise http.Http404
 
     return redirect(reverse('groups:show_group', args=[group.url]))
-
-
-@never_cache
-@waffle_switch('test_membership_renewal_notification')
-def membership_renewal_notification(request):
-    """View to help test membership renewal notification
-
-    Manually spawn a task to send membership renewal notifications to the users.
-    """
-    notify_membership_renewal.apply_async()
-    return redirect(reverse('groups:index_groups'))

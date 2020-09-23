@@ -3,18 +3,12 @@ import hashlib
 import json
 import re
 
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.contrib import messages
-
 from cities_light.models import Country
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.models import User
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
-from waffle import switch_is_active
-
-from mozillians.dino_park.utils import _dino_park_get_profile_by_userid
 from mozillians.users.models import IdpProfile
-from mozillians.users.tasks import send_userprofile_to_cis
-
 
 SSO_AAL_SCOPE = 'https://sso.mozilla.com/claim/AAL'
 
@@ -50,31 +44,7 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
         # will be deprecated with the launch of DinoPark
 
         profile = idp.profile
-        v2_profile_data = _dino_park_get_profile_by_userid(user_id)
-        if not v2_profile_data:
-            full_name = 'Anonymous Mozillian'
-        else:
-            try:
-                data = json.loads(v2_profile_data)
-            except (TypeError, ValueError):
-                data = v2_profile_data
-            # Escape the middleware
-            first_name = data.get('first_name', {}).get('value')
-            last_name = data.get('last_name', {}).get('value')
-            full_name = first_name + ' ' + last_name
-            # TODO: Update this. It's wrong to create entries like this. We need to populate
-            # the Country table and match the incoming location. It's only for M1 beta.
-            location = data.get('location_preference', {}).get('value')
-            if location:
-                country, _ = Country.objects.get_or_create(name=location)
-                profile.country = country
-            timezone = data.get('timezone', {}).get('value')
-            if timezone:
-                profile.timezone = timezone
-            profile.title = data.get('fun_title', {}).get('value', '')
-            is_staff = data.get('staff_information', {}).get('staff', {}).get('value')
-            if is_staff:
-                profile.is_staff = is_staff
+        full_name = 'Anonymous Mozillian'
         profile.full_name = full_name
         profile.auth0_user_id = user_id
         profile.save()
@@ -82,11 +52,7 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
             profile.auto_vouch()
 
     def get_or_create_user(self, *args, **kwargs):
-        user = super(MozilliansAuthBackend, self).get_or_create_user(*args, **kwargs)
-        if switch_is_active('dino-park-autologin') and user:
-            self.request.session['oidc_login_next'] = '/beta'
-
-        return user
+        return super(MozilliansAuthBackend, self).get_or_create_user(*args, **kwargs)
 
     def get_username(self, claims):
         """This method is mostly useful when it is used in DinoPark.
@@ -96,11 +62,6 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
         """
         username = super(MozilliansAuthBackend, self).get_username(claims)
 
-        if switch_is_active('dino-park-autologin'):
-            auth0_user_id = claims.get('user_id') or claims.get('sub')
-            v2_username = _dino_park_get_profile_by_userid(auth0_user_id, return_username=True)
-            if v2_username and username != v2_username:
-                return v2_username
         return username
 
     def create_user(self, claims):
@@ -114,11 +75,6 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
             email=claims.get('email'),
             primary=True
         )
-        # This is temporary for the beta version of DinoPark.
-        # and will be removed after that.
-        if switch_is_active('dino-park-autologin'):
-            self.create_mozillians_profile(auth0_user_id, idp)
-
         return user
 
     def filter_users_by_claims(self, claims):
@@ -183,8 +139,6 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
         # Save once
         obj.save()
 
-        # Update CIS
-        send_userprofile_to_cis.delay(profile.pk)
         return user
 
     def authenticate(self, **kwargs):

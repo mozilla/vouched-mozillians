@@ -1,9 +1,10 @@
+from functools import update_wrapper
 from socket import error as socket_error
 
+from dal import autocomplete
 from django.conf import settings
 from django.conf.urls import url
-from django.contrib import admin
-from django.contrib import messages
+from django.contrib import admin, messages
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, User
@@ -11,27 +12,18 @@ from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
-
-from dal import autocomplete
-from celery.task import group
-from functools import update_wrapper
-from import_export.fields import Field
-from import_export.resources import ModelResource
-from sorl.thumbnail.admin import AdminImageMixin
-
-from mozillians.common.mixins import MozilliansAdminExportMixin
 from mozillians.common.templatetags.helpers import get_datetime
 from mozillians.groups.admin import BaseGroupMembershipAutocompleteForm
-from mozillians.users.admin_forms import (AbuseReportAutocompleteForm, AlternateEmailForm,
-                                          UserProfileAdminForm, VouchAutocompleteForm)
 from mozillians.groups.models import GroupMembership, Skill
-from mozillians.users.models import get_languages_for_locale
-from mozillians.users.models import (AbuseReport, ExternalAccount, IdpProfile, Language, PUBLIC,
-                                     UserProfile, UsernameBlacklist, Vouch)
-from mozillians.users.tasks import (check_celery, subscribe_user_to_basket,
-                                    unsubscribe_from_basket_task, index_all_profiles,
-                                    send_userprofile_to_cis)
-
+from mozillians.users.admin_forms import (AbuseReportAutocompleteForm,
+                                          AlternateEmailForm,
+                                          UserProfileAdminForm,
+                                          VouchAutocompleteForm)
+from mozillians.users.models import (PUBLIC, AbuseReport, ExternalAccount,
+                                     IdpProfile, Language, UsernameBlacklist,
+                                     UserProfile, Vouch,
+                                     get_languages_for_locale)
+from sorl.thumbnail.admin import AdminImageMixin
 
 admin.site.unregister(Group)
 
@@ -40,37 +32,6 @@ Q_PUBLIC_PROFILES = Q()
 for field in UserProfile.privacy_fields():
     key = 'privacy_%s' % field
     Q_PUBLIC_PROFILES |= Q(**{key: PUBLIC})
-
-
-def subscribe_to_basket_action(newsletter):
-    """Subscribe to Basket action."""
-
-    def subscribe_to_basket(modeladmin, request, queryset):
-        """Subscribe to Basket or update details of already subscribed."""
-        ts = [subscribe_user_to_basket.s(userprofile.id, [newsletter])
-              for userprofile in queryset]
-        group(ts)()
-        messages.success(request, 'Basket update started.')
-
-    subscribe_to_basket.short_description = 'Subscribe to or Update {0}'.format(newsletter)
-    subscribe_to_basket.__name__ = 'subscribe_to_basket_{0}'.format(newsletter.replace('-', '_'))
-    return subscribe_to_basket
-
-
-def unsubscribe_from_basket_action(newsletter):
-    """Unsubscribe from Basket action."""
-
-    def unsubscribe_from_basket(modeladmin, request, queryset):
-        """Unsubscribe from Basket."""
-        ts = [unsubscribe_from_basket_task.s(userprofile.email, [newsletter])
-              for userprofile in queryset]
-        group(ts)()
-        messages.success(request, 'Basket update started.')
-
-    unsubscribe_from_basket.short_description = 'Unsubscribe from {0}'.format(newsletter)
-    func_name = 'unsubscribe_from_basket_{0}'.format(newsletter.replace('-', '_'))
-    unsubscribe_from_basket.__name__ = func_name
-    return unsubscribe_from_basket
 
 
 def update_vouch_flags_action():
@@ -84,14 +45,6 @@ def update_vouch_flags_action():
             profile.save()
     update_vouch_flags.short_description = 'Update vouch flags'
     return update_vouch_flags
-
-
-def send_profile_to_cis_action(modeladmin, request, queryset):
-    for obj in queryset:
-        send_userprofile_to_cis.delay(obj.pk)
-
-
-send_profile_to_cis_action.short_description = 'Send profiles to CIS'
 
 
 class SuperUserFilter(SimpleListFilter):
@@ -295,23 +248,6 @@ class NDAStaffMemberFilter(SimpleListFilter):
         return queryset
 
 
-class BasketTokenFilter(SimpleListFilter):
-    """Admin filter for profiles with associated basket token"""
-    title = 'has basket token'
-    parameter_name = 'basket_token'
-
-    def lookups(self, request, model_admin):
-        return (('yes', 'Yes'),
-                ('no', 'No'))
-
-    def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.exclude(basket_token='')
-        elif self.value() == 'no':
-            return queryset.filter(basket_token='')
-        return queryset
-
-
 class MissingCountry(SimpleListFilter):
     """Admin filter for profiles missing country information"""
     title = 'Missing country'
@@ -375,7 +311,7 @@ class MissingCity(SimpleListFilter):
         return queryset
 
 
-class UsernameBlacklistAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class UsernameBlacklistAdmin(admin.ModelAdmin):
     """UsernameBlacklist Admin."""
     save_on_top = True
     search_fields = ['value']
@@ -408,16 +344,7 @@ class MissingLanguagesFilter(SimpleListFilter):
         return queryset
 
 
-class LanguageResource(ModelResource):
-    """django-import-export Language resource."""
-    email = Field(attribute='userprofile__user__email')
-
-    class Meta:
-        model = Language
-
-
-class LanguageAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
-    resource_class = LanguageResource
+class LanguageAdmin(admin.ModelAdmin):
     search_fields = ['userprofile__full_name', 'userprofile__user__email', 'code']
     list_display = ['get_code', 'get_language_name', 'userprofile']
     list_filter = ['code', MissingLanguagesFilter]
@@ -481,23 +408,7 @@ class AlternateEmailInline(admin.TabularInline):
         return qs.filter(type=ExternalAccount.TYPE_EMAIL)
 
 
-class UserProfileResource(ModelResource):
-    """django-import-export UserProfile Resource."""
-    username = Field(attribute='user__username')
-    email = Field(attribute='user__email')
-    country_name = Field(attribute='country__name')
-    country_code = Field(attribute='country__code')
-    region_name = Field(attribute='region__name')
-    region_code = Field(attribute='region__code')
-    city_name = Field(attribute='city__name')
-    city_code = Field(attribute='city__code')
-
-    class Meta:
-        model = UserProfile
-
-
-class UserProfileAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelAdmin):
-    resource_class = UserProfileResource
+class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
     inlines = [LanguageInline, GroupMembershipInline, ExternalAccountInline,
                AlternateEmailInline]
     search_fields = ['full_name', 'user__email', 'user__username', 'ircname',
@@ -508,17 +419,13 @@ class UserProfileAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelA
     list_filter = ['is_vouched', 'can_vouch', DateJoinedFilter,
                    LastLoginFilter, LegacyVouchFilter, SuperUserFilter,
                    CompleteProfileFilter, PublicProfileFilter, AlternateEmailFilter,
-                   NDAMemberFilter, BasketTokenFilter, MissingCountry, MissingRegion,
+                   NDAMemberFilter, MissingCountry, MissingRegion,
                    MissingCity, 'externalaccount__type']
     save_on_top = True
     list_display = ['full_name', 'email', 'username', 'country', 'is_vouched', 'can_vouch',
-                    'number_of_vouchees', 'date_joined', 'send_profile_to_cis']
+                    'number_of_vouchees', 'date_joined']
     list_display_links = ['full_name', 'email', 'username']
-    actions = [subscribe_to_basket_action(settings.BASKET_VOUCHED_NEWSLETTER),
-               unsubscribe_from_basket_action(settings.BASKET_VOUCHED_NEWSLETTER),
-               subscribe_to_basket_action(settings.BASKET_NDA_NEWSLETTER),
-               unsubscribe_from_basket_action(settings.BASKET_NDA_NEWSLETTER),
-               update_vouch_flags_action(), send_profile_to_cis_action]
+    actions = [update_vouch_flags_action()]
 
     fieldsets = (
         ('Account', {
@@ -544,10 +451,6 @@ class UserProfileAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelA
                        'privacy_groups', 'privacy_skills', 'privacy_languages',
                        'privacy_date_mozillian', 'privacy_timezone',
                        'privacy_tshirt', 'privacy_title'),
-            'classes': ('collapse',)
-        }),
-        ('Basket', {
-            'fields': ('basket_token',),
             'classes': ('collapse',)
         }),
         ('Skills', {
@@ -576,22 +479,7 @@ class UserProfileAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelA
             return update_wrapper(wrapper, view)
 
         urls = super(UserProfileAdmin, self).get_urls()
-        urls += [
-            url(r'index_profiles', wrap(self.index_profiles), name='users_index_profiles'),
-            url(r'check_celery', wrap(self.check_celery), name='users_check_celery'),
-            url(r'^(?P<user_id>\d+)/send_profile_to_cis', wrap(self.process_cis_profile),
-                name='users_send_profile_to_cis')
-        ]
         return urls
-
-    def send_profile_to_cis(self, obj):
-        return format_html('<a class="button" href="{}">Send to CIS</a>',
-                           reverse('admin:users_send_profile_to_cis', args=[obj.pk]))
-
-    def process_cis_profile(self, request, user_id, *args, **kwargs):
-        messages.success(request, 'Profile with id {0} sent to CIS.'.format(user_id))
-        send_userprofile_to_cis.delay(user_id)
-        return HttpResponseRedirect(reverse('admin:users_userprofile_changelist'))
 
     def email(self, obj):
         return obj.user.email
@@ -625,30 +513,6 @@ class UserProfileAdmin(AdminImageMixin, MozilliansAdminExportMixin, admin.ModelA
     def date_joined(self, obj):
         return obj.user.date_joined
 
-    def index_profiles(self, request):
-        # Rebuild the search index.
-        index_all_profiles.apply_async()
-        messages.success(request, 'Rebuilding index.')
-        return HttpResponseRedirect(reverse('admin:users_userprofile_changelist'))
-
-    def check_celery(self, request):
-        try:
-            investigator = check_celery.delay()
-        except socket_error as e:
-            messages.error(request, 'Cannot connect to broker: %s' % e)
-            return HttpResponseRedirect(reverse('admin:users_userprofile_changelist'))
-
-        try:
-            investigator.get(timeout=5)
-        except investigator.TimeoutError as e:
-            messages.error(request, 'Worker timeout: %s' % e)
-        except Exception as e:
-            raise e
-        else:
-            messages.success(request, 'Celery is OK')
-
-        return HttpResponseRedirect(reverse('admin:users_userprofile_changelist'))
-
 
 admin.site.register(UserProfile, UserProfileAdmin)
 
@@ -677,7 +541,7 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 
-class GroupAdmin(MozilliansAdminExportMixin, GroupAdmin):
+class GroupAdmin(GroupAdmin):
     pass
 
 
@@ -697,18 +561,7 @@ class VouchAdmin(admin.ModelAdmin):
 admin.site.register(Vouch, VouchAdmin)
 
 
-class ExternalAccountResource(ModelResource):
-    """django-import-export Language resource."""
-    username = Field(attribute='user__user__username')
-    full_name = Field(attribute='user__full_name')
-
-    class Meta:
-        model = ExternalAccount
-        exclude = ['privacy', 'id', 'user']
-
-
-class ExternalAccountAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
-    resource_class = ExternalAccountResource
+class ExternalAccountAdmin(admin.ModelAdmin):
     list_display = ['type', 'user', 'identifier']
     list_filter = ['type']
 
@@ -756,7 +609,7 @@ class AbuseReportAdmin(admin.ModelAdmin):
 admin.site.register(AbuseReport, AbuseReportAdmin)
 
 
-class IdpProfileAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class IdpProfileAdmin(admin.ModelAdmin):
     resource_class = IdpProfile
     list_display = ['type', 'profile', 'auth0_user_id', 'email', 'primary']
     list_filter = ['type']
