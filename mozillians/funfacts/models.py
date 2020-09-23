@@ -1,13 +1,8 @@
 # Unused imports for user-defined queries to execute.
+import bleach
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Count, Avg, Min, Max  # noqa
-
-import bleach
-
-from mozillians.groups.models import Group, Skill  # noqa
-from mozillians.mozspaces.models import MozSpace  # noqa
-from mozillians.users.models import Language, UserProfile  # noqa
+from django.db.models import Avg, Count, Max, Min  # noqa
 
 ALLOWED_TAGS = ['em', 'strong']
 

@@ -13,7 +13,6 @@ from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 from mozillians.common.templatetags.helpers import get_datetime
-from mozillians.groups.admin import BaseGroupMembershipAutocompleteForm
 from mozillians.users.admin_forms import (AlternateEmailForm,
                                           UserProfileAdminForm,
                                           VouchAutocompleteForm)
@@ -302,14 +301,6 @@ class LanguageAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Language, LanguageAdmin)
-
-
-class UserMembershipAutocompleteForm(BaseGroupMembershipAutocompleteForm):
-
-    class Meta:
-        widgets = {
-            'group': autocomplete.ModelSelect2(url='groups:group-autocomplete'),
-        }
 
 
 class LanguageInline(admin.TabularInline):

@@ -1,17 +1,15 @@
 import os
 import uuid
 
-from django.conf import settings
-from django.db import models
-from django.core.exceptions import ValidationError
-from django.utils.timezone import now
+from jinja2 import Markup
 
 import bleach
-from jinja2 import Markup
-from sorl.thumbnail import ImageField
-
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils.timezone import now
 from mozillians.announcements.managers import AnnouncementManager
-
+from sorl.thumbnail import ImageField
 
 ALLOWED_TAGS = ['em', 'strong', 'a', 'u']
 

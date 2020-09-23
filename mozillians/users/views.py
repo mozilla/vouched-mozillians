@@ -1,17 +1,15 @@
 from functools import reduce
 from operator import or_
 
-from django.db.models import Q
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.http import JsonResponse
+from pytz import country_timezones
 
 from cities_light.models import City, Country, Region
 from dal import autocomplete
-from pytz import country_timezones
-
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.http import JsonResponse
 from mozillians.common.templatetags.helpers import get_object_or_none
-from mozillians.groups.models import GroupMembership
 from mozillians.phonebook.forms import get_timezones_list
 from mozillians.users.models import IdpProfile, UserProfile
 
@@ -147,49 +145,6 @@ class StaffProfilesAutocomplete(autocomplete.Select2QuerySetView):
         query = reduce(or_, queries)
 
         qs = UserProfile.objects.filter(query).distinct()
-        if self.q:
-            qs = qs.filter(Q(full_name__icontains=self.q)
-                           | Q(user__email__icontains=self.q)
-                           | Q(user__username__icontains=self.q))
-        return qs
-
-
-class AccessGroupInvitationAutocomplete(StaffProfilesAutocomplete):
-
-    def get_queryset(self):
-        staff_qs = super(AccessGroupInvitationAutocomplete, self).get_queryset()
-        staff_ids = staff_qs.values_list('pk', flat=True)
-
-        # Query NDA memberships
-        nda_members_ids = (
-            GroupMembership.objects.filter(Q(group__name=settings.NDA_GROUP)
-                                           | Q(group__name=settings.NDA_STAFF_GROUP))
-                                   .filter(status=GroupMembership.MEMBER).distinct()
-                                   .values_list('userprofile__pk', flat=True)
-        )
-
-        query = Q(pk__in=staff_ids) | Q(pk__in=nda_members_ids)
-        qs = UserProfile.objects.filter(query).distinct()
-        if self.q:
-            qs = qs.filter(Q(full_name__icontains=self.q)
-                           | Q(user__email__icontains=self.q)
-                           | Q(user__username__icontains=self.q))
-        return qs
-
-
-class NDAGroupInvitationAutocomplete(StaffProfilesAutocomplete):
-
-    def get_queryset(self):
-        staff_qs = super(NDAGroupInvitationAutocomplete, self).get_queryset()
-        staff_ids = staff_qs.values_list('pk', flat=True)
-
-        mfa_idps_query = (IdpProfile.objects.filter(primary=True)
-                                            .filter(Q(type=IdpProfile.PROVIDER_GITHUB)
-                                                    | Q(type=IdpProfile.PROVIDER_FIREFOX_ACCOUNTS)
-                                                    | Q(type=IdpProfile.PROVIDER_GOOGLE)
-                                                    | Q(type=IdpProfile.PROVIDER_LDAP)))
-        mfa_idps_pks = mfa_idps_query.values_list('profile__id', flat=True)
-        qs = UserProfile.objects.filter(Q(pk__in=mfa_idps_pks) | Q(pk__in=staff_ids))
         if self.q:
             qs = qs.filter(Q(full_name__icontains=self.q)
                            | Q(user__email__icontains=self.q)

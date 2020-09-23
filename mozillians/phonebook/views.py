@@ -29,14 +29,12 @@ from haystack.query import EmptySearchQuerySet
 from mozilla_django_oidc.utils import absolutify, import_from_settings
 from mozilla_django_oidc.views import (OIDCAuthenticationRequestView,
                                        get_next_url)
-from mozillians.api.models import APIv2App
 from mozillians.common.decorators import allow_public, allow_unvouched
 from mozillians.common.middleware import GET_VOUCHED_MESSAGE, LOGIN_MESSAGE
 from mozillians.common.templatetags.helpers import (get_object_or_none,
                                                     nonprefixed_url, redirect,
                                                     urlparams)
 from mozillians.common.urlresolvers import reverse
-from mozillians.groups.models import Group
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
 from raven.contrib.django.models import client
@@ -247,33 +245,6 @@ def delete(request):
     return logout(request)
 
 
-def apikeys(request):
-    profile = request.user.userprofile
-    apikey_request_form = forms.APIKeyRequestForm(
-        request.POST or None,
-        instance=APIv2App(enabled=True, owner=profile)
-    )
-
-    if apikey_request_form.is_valid():
-        apikey_request_form.save()
-        msg = _(u'API Key generated successfully.')
-        messages.success(request, msg)
-        return redirect('phonebook:apikeys')
-
-    data = {
-        'appsv2': profile.apps.filter(enabled=True),
-        'apikey_request_form': apikey_request_form,
-    }
-    return render(request, 'phonebook/apikeys.html', data)
-
-
-def delete_apikey(request, api_pk):
-    api_key = get_object_or_404(APIv2App, pk=api_pk, owner=request.user.userprofile)
-    api_key.delete()
-    messages.success(request, _('API key successfully deleted.'))
-    return redirect('phonebook:apikeys')
-
-
 @allow_unvouched
 def logout(request):
     """View that logs out the user and redirects to home page."""
@@ -338,7 +309,6 @@ class PhonebookSearchView(SearchView):
     def get_context_data(self, **kwargs):
         """Override method to pass more context data in the template."""
         context_data = super(PhonebookSearchView, self).get_context_data(**kwargs)
-        context_data['functional_areas'] = Group.get_functional_areas()
         context_data['show_pagination'] = context_data['is_paginated']
         context_data['search_form'] = context_data['form']
         context_data['country'] = self.kwargs.get('country')

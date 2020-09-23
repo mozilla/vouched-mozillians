@@ -16,7 +16,6 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
 from haystack.forms import ModelSearchForm as HaystackSearchForm
 from haystack.query import SQ, SearchQuerySet
-from mozillians.api.models import APIv2App
 from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.validators import validate_username
