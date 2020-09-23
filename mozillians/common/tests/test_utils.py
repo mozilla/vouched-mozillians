@@ -1,15 +1,13 @@
+from mock import MagicMock, patch
+
 from django.test import override_settings
-
-from mock import patch, MagicMock
-from nose.tools import eq_
-
 from mozillians.common.tests import TestCase
 from mozillians.common.utils import akismet_spam_check
+from nose.tools import eq_
 
 
 class AkismetTests(TestCase):
     @patch('mozillians.common.utils.requests')
-    @patch('mozillians.users.tasks.waffle.switch_is_active')
     @override_settings(AKISMET_API_KEY='akismet_api_key')
     @override_settings(SITE_URL='http://example.com')
     def test_akismet_api_spam(self, switch_is_active_mock, mock_requests):
@@ -29,7 +27,6 @@ class AkismetTests(TestCase):
         mock_requests.post.assert_called_with(url, data=data)
 
     @patch('mozillians.common.utils.requests')
-    @patch('mozillians.users.tasks.waffle.switch_is_active')
     @override_settings(AKISMET_API_KEY='akismet_api_key')
     @override_settings(SITE_URL='http://example.com')
     def test_akismet_api_ham(self, switch_is_active_mock, mock_requests):
@@ -49,7 +46,6 @@ class AkismetTests(TestCase):
         mock_requests.post.assert_called_with(url, data=data)
 
     @patch('mozillians.common.utils.requests')
-    @patch('mozillians.users.tasks.waffle.switch_is_active')
     @override_settings(AKISMET_API_KEY='akismet_api_key')
     @override_settings(SITE_URL='http://example.com')
     def test_akismet_api_error(self, switch_is_active_mock, mock_requests):

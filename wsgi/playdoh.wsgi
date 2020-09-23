@@ -1,12 +1,14 @@
 import os
 import site
 
+from django.core.wsgi import get_wsgi_application  # noqa
+from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
+
 try:
     import newrelic.agent
 except ImportError:
     newrelic = False
 
-from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
 
 
 if newrelic:
@@ -17,13 +19,11 @@ if newrelic:
         newrelic = False
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mozillians.settings')
-os.environ.setdefault('CELERY_LOADER', 'django')
 
 # Add `mozillians` to the python path
 wsgidir = os.path.dirname(__file__)
 site.addsitedir(os.path.abspath(os.path.join(wsgidir, '../')))
 
-from django.core.wsgi import get_wsgi_application  # noqa
 application = Sentry(get_wsgi_application())
 
 if newrelic:

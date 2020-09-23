@@ -1,10 +1,8 @@
+from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ValidationError
-
-from dal import autocomplete
-
-from mozillians.users.models import AbuseReport, ExternalAccount, UserProfile, Vouch
+from mozillians.users.models import ExternalAccount, UserProfile, Vouch
 
 
 class VouchAutocompleteForm(forms.ModelForm):
@@ -15,17 +13,6 @@ class VouchAutocompleteForm(forms.ModelForm):
         widgets = {
             'vouchee': autocomplete.ModelSelect2(url='users:vouchee-autocomplete'),
             'voucher': autocomplete.ModelSelect2(url='users:voucher-autocomplete')
-        }
-
-
-class AbuseReportAutocompleteForm(forms.ModelForm):
-
-    class Meta:
-        model = AbuseReport
-        fields = '__all__'
-        widgets = {
-            'profile': autocomplete.ModelSelect2(url='users:vouchee-autocomplete'),
-            'reporter': autocomplete.ModelSelect2(url='users:vouchee-autocomplete'),
         }
 
 

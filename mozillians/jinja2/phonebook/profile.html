@@ -14,8 +14,6 @@
       {{ _('Your Profile') }}
     {% elif profile.is_vouched %}
       {{ _('Mozillian Profile') }}
-    {% else %}
-      {{ _('Pending Profile') }}
     {% endif %}
   </div>
   {% if user.is_authenticated() and not profile.is_vouched %}
@@ -125,52 +123,8 @@
                 <span class="github_url">{{ idp|get_idp_external_url }}</span>
               </section>
             {% endif %}
-            {% if profile.ircname %}
-              <section class="p-nickname">
-                <i class="icon-comments-o"></i> IRC :
-                <span class="nickname">{{ profile.ircname }}</span>
-              </section>
-            {% endif %}
-            {% if profile.tshirt %}
-              <section><i class="icon-shirt"></i>
-                {{ _('T-Shirt Size:') }} {{ profile.get_tshirt_display() }}</section>
-            {% endif %}
         </div>
       </section>
-
-      {% if abuse_form %}
-        <section id="profile-actions">
-          <div class="actions-details">
-            <button class="btn btn-default btn-xs" type="submit" data-toggle="modal" data-target="#ReportModal">Report</button>
-          </div>
-        </section>
-
-        <!-- Report Modal -->
-        <div class="modal fade" id="ReportModal" tabindex="-1" role="dialog" aria-labelledby="ReportModalLabel">
-          <div class="modal-dialog modal-sm" role="document">
-            <div class="modal-content">
-              <form id="report-form" class="form-group" method="POST" action="{{ url('phonebook:profile_view', shown_user.username) }}">
-                {% csrf_token %}
-                <div class="modal-header">
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                  <h4 class="modal-title" id="ReportModalLabel">Report User</h4>
-                </div>
-                <div class="modal-body">
-                  <fieldset>
-                    <div class="report-option">
-                      {{ mozillians_field(abuse_form.type) }}
-                    </div>
-                  </fieldset>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                  <button type="submit" class="btn btn-primary">Report</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      {% endif %}
 
     </article>
 
@@ -225,79 +179,6 @@
             <p>
               <a href="{{ profile.story_link }}">{{ _('My contribution story') }}</a>
             </p>
-          </div>
-        {% endif %}
-
-        {% if access_groups %}
-          <div id="groups" class="profile-entry">
-            <h3><i class="icon-group"></i> {{ _('Access Groups') }}</h3>
-              {% for group in access_groups %}
-                {% set curators = group.curators.all() %}
-                {% if (user.is_authenticated() and user.userprofile.is_vouched) %}
-                  <a href="{{ url('groups:show_group', group.url) }}">
-                    {%- if profile in curators -%}
-                      <i class="icon-crown"></i>
-                    {%- endif -%}
-                    {{ group.name }}
-                    {%- if group.pending %} {{ _('(membership requested)') }}{%- endif -%}
-                    {%- if group.pending_terms %} {{ _('(pending terms review)') }}{%- endif -%}
-                  </a>
-                  {%- if group.inviter and user.userprofile.can_create_access_groups %}
-                    <span>
-                      invited by
-                      <a href="{{ url('phonebook:profile_view', group.inviter.user.username) }}">
-                        {{ group.inviter.display_name }}
-                      </a>
-                    </span>
-                  {%- endif -%}
-                {%- else -%}
-                  {%- if profile in curators -%}
-                    <i class="icon-crown"></i>
-                  {%- endif -%}
-                  {{ group.name }}
-                {%- endif -%}
-                {% if not loop.last %},{% endif %}
-              {% endfor %}
-          </div>
-        {% endif %}
-
-        {% if tags %}
-          <div id="groups" class="profile-entry">
-            <h3><i class="icon-group"></i> {{ _('Tags') }}</h3>
-              {% for tag in tags %}
-                {% set curators = tag.curators.all() %}
-                {% if (user.is_authenticated() and user.userprofile.is_vouched) %}
-                  <a href="{{ url('groups:show_group', tag.url) }}">
-                    {%- if profile in curators -%}
-                      <i class="icon-crown"></i>
-                    {%- endif -%}
-                    {{ tag.name }}
-                    {%- if tag.pending %} {{ _('(membership requested)') }}{%- endif -%}
-                    {%- if tag.pending_terms %} {{ _('(pending terms review)') }}{%- endif -%}
-                  </a>
-                {%- else -%}
-                  {%- if profile in curators -%}
-                    <i class="icon-crown"></i>
-                  {%- endif -%}
-                  {{ tag.name }}
-                {%- endif -%}
-                {% if not loop.last %},{% endif %}
-              {% endfor %}
-          </div>
-        {% endif %}
-
-        {% if profile.skills.count() %}
-          <div id="skills" class=" profile-entry">
-            <h3><i class="icon-wrench"></i> {{ _('Skills') }}</h3>
-              {% for skill in profile.skills.all() %}
-                {% if (user.is_authenticated() and
-                       user.userprofile.is_vouched) %}
-                  <a href="{{ url('groups:show_skill', skill.url) }}">{{ skill.name }}</a>
-                {%- else -%}
-                  {{ skill.name }}
-                {%- endif -%}
-                {%- if not loop.last %},{% endif %}
-              {% endfor %}
           </div>
         {% endif %}
 

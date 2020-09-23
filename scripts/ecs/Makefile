@@ -30,11 +30,3 @@ push-web: tag-web ## Push mozillians web docker image
 
 deploy-web: push-web check-deps ## Deploy new image to ECS web service
 	ecs-deploy -c $(CLUSTER) -n mozillians-$(ENV)-web -i $(DOCKER_REPO):$(COMMIT_HASH) --skip-deployments-check --timeout 300
-
-deploy-celery: push-web check-deps ## Deploy new image to ECS celery service
-	ecs-deploy -c $(CLUSTER) -n mozillians-$(ENV)-celery -i $(DOCKER_REPO):$(COMMIT_HASH) --skip-deployments-check --timeout 300
-
-deploy-celerybeat: push-web check-deps ## Deploy new image to ECS celerybeat service
-	ecs-deploy -c $(CLUSTER) -n mozillians-$(ENV)-celery-beat -i $(DOCKER_REPO):$(COMMIT_HASH) --skip-deployments-check --timeout 300
-
-deploy-all: deploy-web deploy-celery deploy-celerybeat ## Deploy new image to all ECS services

@@ -32,32 +32,6 @@ services:
       - es
       - memcached
       - broker
-  celery:
-    build:
-      context: .
-      dockerfile: docker/dev
-    volumes:
-      - .:/code
-    links:
-      - db
-      - es
-      - broker
-      - memcached
-    command: ./bin/run-celery.sh
-    environment:
-      - C_FORCE_ROOT=true
-  flower:
-    build:
-      context: .
-      dockerfile: docker/dev
-    volumes:
-      - .:/code
-    links:
-      - db
-      - broker
-    ports:
-      - "5555:5555"
-    command: flower -A mozillians --address=0.0.0.0 --port=5555
 volumes:
   mariadb_volume:
 

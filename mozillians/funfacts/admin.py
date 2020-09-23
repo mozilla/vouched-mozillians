@@ -1,10 +1,8 @@
 from django.contrib import admin
-
-from mozillians.common.mixins import MozilliansAdminExportMixin
 from models import FunFact
 
 
-class FunFactAdmin(MozilliansAdminExportMixin, admin.ModelAdmin):
+class FunFactAdmin(admin.ModelAdmin):
     readonly_fields = ['result', 'created', 'updated']
     list_display = ['name', 'created', 'updated', 'result', 'is_published']
 

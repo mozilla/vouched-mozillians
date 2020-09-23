@@ -3,41 +3,38 @@ import os
 import uuid
 from itertools import chain
 
+from pytz import common_timezones
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db import models
-from django.db.models import Q, Manager, ManyToManyField
+from django.db.models import Manager, ManyToManyField, Q
+from django.template.loader import get_template
 from django.utils.encoding import iri_to_uri
 from django.utils.http import urlquote
 from django.utils.timezone import now
-from django.utils.translation import ugettext as _, ugettext_lazy as _lazy
-from django.template.loader import get_template
-
-from product_details import product_details
-from PIL import Image
-from pytz import common_timezones
-from sorl.thumbnail import ImageField, get_thumbnail
-from waffle import switch_is_active
-
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _lazy
 from mozillians.common import utils
-from mozillians.common.templatetags.helpers import absolutify, gravatar
-from mozillians.common.templatetags.helpers import offset_of_timezone
+from mozillians.common.templatetags.helpers import (absolutify, gravatar,
+                                                    offset_of_timezone)
 from mozillians.common.urlresolvers import reverse
-from mozillians.groups.models import (Group, GroupAlias, GroupMembership, Invite,
-                                      Skill, SkillAlias)
-from mozillians.phonebook.validators import (validate_email, validate_twitter,
-                                             validate_website, validate_username_not_url,
-                                             validate_phone_number, validate_linkedin,
-                                             validate_discord)
+from mozillians.phonebook.validators import (validate_discord, validate_email,
+                                             validate_linkedin,
+                                             validate_phone_number,
+                                             validate_twitter,
+                                             validate_username_not_url,
+                                             validate_website)
 from mozillians.users import get_languages_for_locale
-from mozillians.users.managers import (EMPLOYEES,
-                                       MOZILLIANS, PRIVACY_CHOICES, PRIVACY_CHOICES_WITH_PRIVATE,
-                                       PRIVATE, PUBLIC, PUBLIC_INDEXABLE_FIELDS,
+from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
+                                       PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,
+                                       PUBLIC, PUBLIC_INDEXABLE_FIELDS,
                                        UserProfileQuerySet)
-from mozillians.users.tasks import send_userprofile_to_cis
-
+from PIL import Image
+from product_details import product_details
+from sorl.thumbnail import ImageField, get_thumbnail
 
 COUNTRIES = product_details.get_regions('en-US')
 AVATAR_SIZE = (300, 300)
@@ -64,8 +61,6 @@ class UserProfilePrivacyModel(models.Model):
 
     privacy_photo = PrivacyField()
     privacy_full_name = PrivacyField()
-    privacy_full_name_local = PrivacyField()
-    privacy_ircname = PrivacyField()
     privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE,
                                  default=MOZILLIANS)
     privacy_bio = PrivacyField()
@@ -75,13 +70,9 @@ class UserProfilePrivacyModel(models.Model):
     privacy_city = PrivacyField()
     privacy_region = PrivacyField()
     privacy_country = PrivacyField()
-    privacy_groups = PrivacyField()
-    privacy_skills = PrivacyField()
     privacy_languages = PrivacyField()
     privacy_date_mozillian = PrivacyField()
     privacy_timezone = PrivacyField()
-    privacy_tshirt = PrivacyField(choices=((PRIVATE, _lazy(u'Private')),),
-                                  default=PRIVATE)
     privacy_title = PrivacyField()
     privacy_story_link = PrivacyField()
 
@@ -140,18 +131,11 @@ class UserProfilePrivacyModel(models.Model):
 
 
 class UserProfile(UserProfilePrivacyModel):
-    REFERRAL_SOURCE_CHOICES = (
-        ('direct', 'Mozillians'),
-        ('contribute', 'Get Involved'),
-    )
-
     objects = ProfileManager()
 
     user = models.OneToOneField(User)
     full_name = models.CharField(max_length=255, default='', blank=False,
                                  verbose_name=_lazy(u'Full Name'))
-    full_name_local = models.CharField(max_length=255, blank=True, default='',
-                                       verbose_name=_lazy(u'Name in local language'))
     is_vouched = models.BooleanField(
         default=False,
         help_text='You can edit vouched status by editing invidual vouches')
@@ -159,13 +143,8 @@ class UserProfile(UserProfilePrivacyModel):
         default=False,
         help_text='You can edit can_vouch status by editing invidual vouches')
     last_updated = models.DateTimeField(auto_now=True)
-    groups = models.ManyToManyField(Group, blank=True, related_name='members',
-                                    through=GroupMembership)
-    skills = models.ManyToManyField(Skill, blank=True, related_name='members')
     bio = models.TextField(verbose_name=_lazy(u'Bio'), default='', blank=True)
     photo = ImageField(default='', blank=True, upload_to=_calculate_photo_filename)
-    ircname = models.CharField(max_length=63, verbose_name=_lazy(u'IRC Nickname'),
-                               default='', blank=True)
 
     # validated geo data (validated that it's valid geo data, not that the
     # mozillian is there :-) )
@@ -184,21 +163,10 @@ class UserProfile(UserProfilePrivacyModel):
     country = models.ForeignKey('cities_light.Country', blank=True, null=True,
                                 on_delete=models.SET_NULL)
 
-    basket_token = models.CharField(max_length=1024, default='', blank=True)
     date_mozillian = models.DateField('When was involved with Mozilla',
                                       null=True, blank=True, default=None)
     timezone = models.CharField(max_length=100, blank=True, default='',
                                 choices=zip(common_timezones, common_timezones))
-    tshirt = models.IntegerField(
-        _lazy(u'T-Shirt'), blank=True, null=True, default=None,
-        choices=(
-            (1, _lazy(u'Fitted Small')), (2, _lazy(u'Fitted Medium')),
-            (3, _lazy(u'Fitted Large')), (4, _lazy(u'Fitted X-Large')),
-            (5, _lazy(u'Fitted XX-Large')), (6, _lazy(u'Fitted XXX-Large')),
-            (7, _lazy(u'Straight-cut Small')), (8, _lazy(u'Straight-cut Medium')),
-            (9, _lazy(u'Straight-cut Large')), (10, _lazy(u'Straight-cut X-Large')),
-            (11, _lazy(u'Straight-cut XX-Large')), (12, _lazy(u'Straight-cut XXX-Large'))
-        ))
     title = models.CharField(_lazy(u'What do you do for Mozilla?'),
                              max_length=70, blank=True, default='')
 
@@ -208,9 +176,6 @@ class UserProfile(UserProfilePrivacyModel):
                         u'tells the story of how you came to be a '
                         u'Mozillian, specify that link here.'),
         max_length=1024, blank=True, default='')
-    referral_source = models.CharField(max_length=32,
-                                       choices=REFERRAL_SOURCE_CHOICES,
-                                       default='direct')
     # This is the Auth0 user ID. We are saving only the primary here.
     auth0_user_id = models.CharField(max_length=1024, default='', blank=True)
     is_staff = models.BooleanField(default=False)
@@ -285,28 +250,6 @@ class UserProfile(UserProfilePrivacyModel):
         _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
         accounts = _getattr('externalaccount_set').filter(type=ExternalAccount.TYPE_EMAIL)
         return self._filter_accounts_privacy(accounts)
-
-    @property
-    def _api_alternate_emails(self):
-        """
-        Helper private property that creates a compatibility layer
-        for API results in alternate emails. Combines both IdpProfile
-        and ExternalAccount objects. In conflicts/duplicates it returns
-        the minimum privacy level defined.
-        """
-        legacy_emails_qs = self._alternate_emails
-        idp_qs = self._identity_profiles
-
-        e_exclude = [e.id for e in legacy_emails_qs if
-                     idp_qs.filter(email=e.identifier, privacy__gte=e.privacy).exists()]
-        legacy_emails_qs = legacy_emails_qs.exclude(id__in=e_exclude)
-
-        idp_exclude = [i.id for i in idp_qs if
-                       legacy_emails_qs.filter(identifier=i.email,
-                                               privacy__gte=i.privacy).exists()]
-        idp_qs = idp_qs.exclude(id__in=idp_exclude)
-
-        return chain(legacy_emails_qs, idp_qs)
 
     @property
     def _identity_profiles(self):
@@ -409,7 +352,7 @@ class UserProfile(UserProfilePrivacyModel):
     @property
     def privacy_level(self):
         """Return user privacy clearance."""
-        if (self.user.groups.filter(name='Managers').exists() or self.user.is_superuser):
+        if self.user.is_superuser:
             return PRIVATE
         if self.groups.filter(name='staff').exists():
             return EMPLOYEES
@@ -437,18 +380,7 @@ class UserProfile(UserProfilePrivacyModel):
 
     @property
     def is_manager(self):
-        return self.user.is_superuser or self.user.groups.filter(name='Managers').exists()
-
-    @property
-    def is_nda(self):
-        query = {
-            'userprofile__pk': self.pk,
-            'status': GroupMembership.MEMBER
-        }
-        is_nda_member = (GroupMembership.objects.filter(Q(group__name=settings.NDA_GROUP)
-                                                        | Q(group__name=settings.NDA_STAFF_GROUP))
-                                                .filter(**query).exists())
-        return is_nda_member or self.user.is_superuser
+        return self.user.is_superuser
 
     @property
     def date_vouched(self):
@@ -457,32 +389,6 @@ class UserProfile(UserProfilePrivacyModel):
         if vouches:
             return vouches[0].date
         return None
-
-    @property
-    def can_create_access_groups(self):
-        """Check if a user can provision access groups.
-
-        An access group is provisioned if a user holds an email in the AUTO_VOUCH_DOMAINS
-        and has an LDAP IdpProfile or the user has a superuser account.
-        """
-        emails = set(
-            [idp.email for idp in
-             IdpProfile.objects.filter(profile=self, type=IdpProfile.PROVIDER_LDAP)
-             if idp.email.split('@')[1] in settings.AUTO_VOUCH_DOMAINS]
-        )
-        if self.user.is_superuser or emails:
-            return True
-        return False
-
-    def can_join_access_groups(self):
-        """Check if a user can join access groups.
-
-        A user can join an access group only if has an MFA account and
-        belongs to the NDA group or is an employee.
-        """
-        if self.can_create_access_groups or self.is_nda:
-            return True
-        return False
 
     def set_instance_privacy_level(self, level):
         """Sets privacy level of instance."""
@@ -494,40 +400,6 @@ class UserProfile(UserProfilePrivacyModel):
             setattr(self, 'privacy_%s' % field, level)
         if save:
             self.save()
-
-    def set_membership(self, model, membership_list):
-        """Alters membership to Groups and Skills."""
-        if model is Group:
-            m2mfield = self.groups
-            alias_model = GroupAlias
-        elif model is Skill:
-            m2mfield = self.skills
-            alias_model = SkillAlias
-
-        # Remove any visible groups that weren't supplied in this list.
-        if model is Group:
-            (GroupMembership.objects.filter(userprofile=self, group__visible=True)
-                                    .exclude(group__name__in=membership_list).delete())
-        else:
-            m2mfield.remove(*[g for g in m2mfield.all()
-                              if g.name not in membership_list and g.is_visible])
-
-        # Add/create the rest of the groups
-        groups_to_add = []
-        for g in membership_list:
-            if alias_model.objects.filter(name=g).exists():
-                group = alias_model.objects.get(name=g).alias
-            else:
-                group = model.objects.create(name=g)
-
-            if group.is_visible:
-                groups_to_add.append(group)
-
-        if model is Group:
-            for group in groups_to_add:
-                group.add_member(self)
-        else:
-            m2mfield.add(*groups_to_add)
 
     def get_photo_thumbnail(self, geometry='160x160', **kwargs):
         if 'crop' not in kwargs:
@@ -583,180 +455,6 @@ class UserProfile(UserProfilePrivacyModel):
 
         return True
 
-    def vouch(self, vouched_by, description='', autovouch=False):
-        if not self.is_vouchable(vouched_by):
-            return
-
-        vouch = self.vouches_received.create(
-            voucher=vouched_by,
-            date=now(),
-            description=description,
-            autovouch=autovouch
-        )
-
-        # Let's disable this for the M1 of DinoPark.
-        # TODO: remove this check after M1
-        if not switch_is_active('dino-park-autologin'):
-            self._email_now_vouched(vouched_by, description)
-        return vouch
-
-    def auto_vouch(self):
-        """Auto vouch mozilla.com users."""
-        employee_vouch_q = self.vouches_received.filter(description=settings.AUTO_VOUCH_REASON,
-                                                        autovouch=True)
-        if not employee_vouch_q.exists():
-            self.vouch(None, settings.AUTO_VOUCH_REASON, autovouch=True)
-
-    def _email_now_vouched(self, vouched_by, description=''):
-        """Email this user, letting them know they are now vouched."""
-        name = None
-        voucher_profile_link = None
-        vouchee_profile_link = utils.absolutify(self.get_absolute_url())
-        if vouched_by:
-            name = vouched_by.full_name
-            voucher_profile_link = utils.absolutify(vouched_by.get_absolute_url())
-
-        number_of_vouches = self.vouches_received.all().count()
-        template = get_template('phonebook/emails/vouch_confirmation_email.txt')
-        message = template.render({
-            'voucher_name': name,
-            'voucher_profile_url': voucher_profile_link,
-            'vouchee_profile_url': vouchee_profile_link,
-            'vouch_description': description,
-            'functional_areas_url': utils.absolutify(reverse('groups:index_functional_areas')),
-            'groups_url': utils.absolutify(reverse('groups:index_groups')),
-            'first_vouch': number_of_vouches == 1,
-            'can_vouch_threshold': number_of_vouches == settings.CAN_VOUCH_THRESHOLD,
-        })
-        subject = _(u'You have been vouched on Mozillians.org')
-        filtered_message = message.replace('&#34;', '"').replace('&#39;', "'")
-        send_mail(subject, filtered_message, settings.FROM_NOREPLY,
-                  [self.email])
-
-    def _get_annotated_groups(self):
-        # Query this way so we only get the groups that the privacy controls allow the
-        # current user to see. We have to force evaluation of this query first, otherwise
-        # Django combines the whole thing into one query and loses the privacy control.
-        groups_manager = self.groups
-        # checks to avoid AttributeError exception b/c self.groups may returns
-        # EmptyQuerySet instead of the default manager due to privacy controls
-        user_group_ids = []
-        if hasattr(groups_manager, 'visible'):
-            user_group_ids = groups_manager.visible().values_list('id', flat=True)
-
-        return self.groupmembership_set.filter(group__id__in=user_group_ids)
-
-    def get_annotated_tags(self):
-        """
-        Return a list of all the visible tags the user is a member of or pending
-        membership. The groups pending membership will have a .pending attribute
-        set to True, others will have it set False.
-        """
-        tags = self._get_annotated_groups().filter(group__is_access_group=False)
-        annotated_tags = []
-        for membership in tags:
-            tag = membership.group
-            tag.pending = (membership.status == GroupMembership.PENDING)
-            tag.pending_terms = (membership.status == GroupMembership.PENDING_TERMS)
-            annotated_tags.append(tag)
-        return annotated_tags
-
-    def get_annotated_access_groups(self):
-        """
-        Return a list of all the visible access groups the user is a member of or pending
-        membership. The groups pending membership will have a .pending attribute
-        set to True, others will have it set False. There is also an inviter attribute
-        which displays the inviter of the user in the group.
-        """
-        access_groups = self._get_annotated_groups().filter(group__is_access_group=True)
-        annotated_access_groups = []
-
-        for membership in access_groups:
-            group = membership.group
-            group.pending = (membership.status == GroupMembership.PENDING)
-            group.pending_terms = (membership.status == GroupMembership.PENDING_TERMS)
-
-            try:
-                invite = Invite.objects.get(group=membership.group, redeemer=self)
-            except Invite.DoesNotExist:
-                invite = None
-
-            if invite:
-                group.inviter = invite.inviter
-            annotated_access_groups.append(group)
-
-        return annotated_access_groups
-
-    def get_cis_emails(self):
-        """Prepares the entry for emails in the CIS format."""
-        idp_profiles = self.idp_profiles.all()
-        primary_idp = idp_profiles.filter(primary=True)
-        emails = []
-        primary_email = {
-            'value': self.email,
-            'verified': True,
-            'primary': True,
-            'name': 'mozillians-primary-{0}'.format(self.pk)
-        }
-        # We have an IdpProfile marked as primary (login identity)
-        # If there is not an idp profile, the self.email is the one that is used to login
-        if primary_idp.exists():
-            primary_email['value'] = primary_idp[0].email
-            primary_email['name'] = primary_idp[0].get_type_display()
-
-        emails.append(primary_email)
-
-        # Non primary identity profiles
-        for idp in self.idp_profiles.filter(primary=False):
-            entry = {
-                'value': idp.email,
-                'verified': True,
-                'primary': False,
-                'name': '{0}'.format(idp.get_type_display())
-            }
-            emails.append(entry)
-
-        return emails
-
-    def get_cis_uris(self):
-        """Prepares the entry for URIs in the CIS format."""
-        accounts = []
-        for account in self.externalaccount_set.exclude(type=ExternalAccount.TYPE_EMAIL):
-            value = account.get_identifier_url()
-            account_type = ExternalAccount.ACCOUNT_TYPES[account.type]
-            if value:
-                entry = {
-                    'value': value,
-                    'primary': False,
-                    'verified': False,
-                    'name': 'mozillians-{}-{}'.format(account_type['name'], account.pk)
-                }
-                accounts.append(entry)
-
-        return accounts
-
-    def get_cis_groups(self, idp):
-        """Prepares the entry for profile groups in the CIS format."""
-
-        memberships = GroupMembership.objects.filter(
-            userprofile=self,
-            status=GroupMembership.MEMBER,
-            group__is_access_group=True
-        )
-        groups = ['mozilliansorg_{}'.format(m.group.url) for m in memberships]
-        return groups
-
-    def get_cis_tags(self):
-        """Prepares the entry for profile tags in the CIS format."""
-        memberships = GroupMembership.objects.filter(
-            userprofile=self,
-            status=GroupMembership.MEMBER
-        ).exclude(
-            group__is_access_group=True
-        )
-
-        tags = [m.group.url for m in memberships]
-        return tags
 
     def timezone_offset(self):
         """
@@ -774,9 +472,6 @@ class UserProfile(UserProfilePrivacyModel):
         super(UserProfile, self).save(*args, **kwargs)
         # Auto_vouch follows the first save, because you can't
         # create foreign keys without a database id.
-
-        if self.is_complete:
-            send_userprofile_to_cis.delay(self.pk)
 
         if autovouch:
             self.auto_vouch()
@@ -886,23 +581,6 @@ class Vouch(models.Model):
 
     def __unicode__(self):
         return u'{0} vouched by {1}'.format(self.vouchee, self.voucher)
-
-
-class AbuseReport(models.Model):
-    TYPE_SPAM = 'spam'
-    TYPE_INAPPROPRIATE = 'inappropriate'
-
-    REPORT_TYPES = (
-        (TYPE_SPAM, 'Spam profile'),
-        (TYPE_INAPPROPRIATE, 'Inappropriate content')
-    )
-
-    reporter = models.ForeignKey(UserProfile, related_name='abuses_reported', null=True)
-    profile = models.ForeignKey(UserProfile, related_name='abuses')
-    type = models.CharField(choices=REPORT_TYPES, max_length=30, blank=False, default='')
-    is_akismet = models.BooleanField(default=False)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
 
 
 class UsernameBlacklist(models.Model):

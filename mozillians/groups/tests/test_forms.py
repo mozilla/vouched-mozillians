@@ -1,14 +1,13 @@
-from django.test.client import RequestFactory
-
 from mock import patch
-from nose.tools import eq_, ok_
 
+from django.test.client import RequestFactory
 from mozillians.common.tests import TestCase
 from mozillians.groups import forms
 from mozillians.groups.models import Group
 from mozillians.groups.tests import GroupAliasFactory, GroupFactory
 from mozillians.users.models import IdpProfile
 from mozillians.users.tests import UserFactory
+from nose.tools import eq_, ok_
 
 
 class GroupCreateFormTests(TestCase):
@@ -254,21 +253,6 @@ class GroupEditFormTests(BaseGroupEditTestCase):
         data = {'terms': 'foobar',
                 'invalidation_days': 40}
         self.validate_group_edit_forms(forms.GroupTermsExpirationForm, group, data)
-
-    def test_edit_invitation(self):
-        invitee = UserFactory.create()
-        curator = UserFactory.create()
-        group = GroupFactory.create(invite_email_text='foobar')
-        group.curators.add(curator.userprofile)
-        request = RequestFactory().request()
-        request.user = curator
-        data = {'invites': [invitee.userprofile.id]}
-
-        with patch('mozillians.groups.forms.notify_redeemer_invitation.delay') as mocked_task:
-            form = self.validate_group_edit_forms(forms.GroupInviteForm, group, data, request)
-        eq_(list(form.instance.invites.all().values_list('id', flat=True)), [invitee.id])
-        ok_(mocked_task.called)
-        eq_(mocked_task.call_args[0][1], u'foobar')
 
     def test_edit_invitation_without_curator(self):
         invitee = UserFactory.create()

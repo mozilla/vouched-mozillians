@@ -14,15 +14,8 @@
     * State
       * MySQL
         * RDS
-      * Redis for celery message broker
-        * ElasticCache
       * Memcache for caching
         * ElasticCache
-  * mozillians-{staging,prod}-celery
-    * Celery workers for mozillians
-  * mozillians-{staging,prod}-celerybeat
-    * Celerybeat scheduler for celery
-    * Needs to be only a single instance running
 * Load balancing
   * SSL termination and load balancing is happening using ALB
   * One ALB instance for both envs

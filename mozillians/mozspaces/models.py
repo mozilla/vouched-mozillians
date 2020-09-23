@@ -1,13 +1,13 @@
 import os
 import uuid
 
+from pytz import common_timezones
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from product_details import product_details
-from pytz import common_timezones
 from sorl.thumbnail import ImageField
-
 
 COUNTRIES = product_details.get_regions('en-US').items()
 COUNTRIES = sorted(COUNTRIES, key=lambda country: country[1])

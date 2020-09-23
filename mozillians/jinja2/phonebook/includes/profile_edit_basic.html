@@ -7,9 +7,7 @@
 
         {% if (basic_information_form.non_field_errors()
                or user_form.non_field_errors()
-               or language_formset.non_form_errors()
-               or idp_profile_formset.non_form_errors()
-               or skills_form.non_field_errors()) %}
+               or idp_profile_formset.non_form_errors()) %}
           <ul class="unstyled">
             {% for error in basic_information_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
@@ -17,13 +15,7 @@
             {% for error in user_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
-            {% for error in language_formset.non_form_errors() %}
-              <li class="alert alert-error">{{ error }}</li>
-            {% endfor %}
             {% for error in idp_profile_formset.non_form_errors() %}
-              <li class="alert alert-error">{{ error }}</li>
-            {% endfor %}
-            {% for error in skills_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
           </ul>
@@ -54,17 +46,6 @@
             </div>
             <div class="col-md-4 col-sm-6 text-right">
               {{ privacy_field(basic_information_form.privacy_full_name) }}
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <div class="row">
-            <div class="col-md-8 col-sm-6">
-              {{ mozillians_field(basic_information_form.full_name_local) }}
-            </div>
-            <div class="col-md-4 col-sm-6 text-right">
-              {{ privacy_field(basic_information_form.privacy_full_name_local) }}
             </div>
           </div>
         </fieldset>
@@ -158,107 +139,11 @@
             are not shown.
           </div>
 
-        <!-- Add a new email -->
-          <div id="add-identity-profile">
-            <a id="nav-login" title="{{_('Add a new identity.')}}"
-              href="{{ nonprefixed_url('phonebook:verify_identity') }}?next={{ url('phonebook:profile_edit') }}">
-              <span class="signin button">{{ _('Add Identity') }}</span>
-            </a>
-            <div class="help-block">
-              You will be asked to verify the new identity.
-            </div>
-          </div>
-        </fieldset>
       </div>
       <div class="panel-footer">
         <button class="btn btn-primary" id="form-submit-identity" type="submit"
                 name="idp_section">{{ _('Update Identities') }}
         </button>
-      </div>
-    </div>
-  </form>
-
-  <form class="edit-profile" method="POST" action="{{ url('phonebook:profile_edit') }}?next=profile">
-    {% csrf_token %}
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        {{ _('Skills') }}
-      </div>
-      <div class="panel-body">
-        <fieldset>
-          <div class="row">
-            <div class="col-sm-8">
-              <p class="field_description">
-                {% trans %}
-                  A skill is the learned capacity to carry out pre-determined
-                  results often with the minimum outlay of time, energy, or
-                  both.
-                {% endtrans %}
-              </p>
-            </div>
-            <div class="col-sm-4 text-right">
-              {{ privacy_field(skills_form.privacy_skills) }}
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-md-12">
-              <fieldset id="skills">
-                {{ mozillians_field(skills_form.skills) }}
-              </fieldset>
-            </div>
-          </div>
-        </fieldset>
-      </div>
-      <div class="panel-footer">
-        <button class="btn btn-primary" id="form-submit-skills" type="submit"
-                name="skills_section">{{ _('Update Skills') }}
-        </button>
-      </div>
-    </div>
-  </form>
-
-  <form class="edit-profile" method="POST" action="{{ url('phonebook:profile_edit') }}?next=profile">
-    {% csrf_token %}
-    <div class="panel panel-default">
-      <div class="panel-heading">{{ _('Languages') }}</div>
-      <div class="panel-body">
-        <fieldset>
-          <div class="row">
-            <div class="col-sm-8" id="languages">
-              <p class="field_description">
-                {% trans %}
-                  The Mozilla Project spans over many countries and
-                  languages. Share the languages you speak to be found
-                  easily by other Mozillians.
-                {% endtrans %}
-              </p>
-              {{ language_formset.management_form }}
-              {% for language_form in language_formset %}
-                <div class="language-fieldrow {% if language_form.errors %} error{% endif %}">
-                  {{ language_form.non_field_errors() }}
-                  {% for field in language_form %}
-                    {{ field }}
-                    {% if field.name == 'DELETE' %}
-                      <i class="icon-minus-circle"></i> {{ _('Delete') }}
-                    {% endif %}
-                  {% endfor %}
-                  <div class="error">
-                    {% for field in language_form %}
-                      {{ field.errors }}
-                    {% endfor %}
-                  </div>
-                </div>
-              {% endfor %}
-              <a href="#" id="languages-addfield" class="addField"><i class="icon-plus-circle"></i> {{ _('Add language') }}</a>
-            </div>
-            <div class="col-sm-4">
-              {{ privacy_field(language_privacy_form.privacy_languages) }}
-            </div>
-          </div>
-        </fieldset>
-      </div>
-      <div class="panel-footer">
-        <button class="btn btn-primary" id="form-submit-langauge" type="submit" name="languages_section">{{ _('Update Languages') }}</button>
       </div>
     </div>
   </form>

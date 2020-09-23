@@ -2,33 +2,31 @@ import re
 from cStringIO import StringIO
 from datetime import datetime
 
+from pytz import common_timezones
+
+import django_filters
+import happyforms
+from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import UploadedFile
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import RadioSelect
-from django.utils.translation import ugettext as _, ugettext_lazy as _lazy
-
-import django_filters
-import happyforms
-from dal import autocomplete
+from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _lazy
 from haystack.forms import ModelSearchForm as HaystackSearchForm
 from haystack.query import SQ, SearchQuerySet
-from nocaptcha_recaptcha.fields import NoReCaptchaField
-from pytz import common_timezones
-from PIL import Image
-
-from mozillians.api.models import APIv2App
 from mozillians.common.urlresolvers import reverse
-from mozillians.groups.models import Group
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.validators import validate_username
 from mozillians.phonebook.widgets import MonthYearWidget
 from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import PUBLIC
-from mozillians.users.models import AbuseReport, ExternalAccount, IdpProfile, Language, UserProfile
+from mozillians.users.models import (ExternalAccount, IdpProfile, Language,
+                                     UserProfile)
 from mozillians.users.search_indexes import IdpProfileIndex, UserProfileIndex
-
+from nocaptcha_recaptcha.fields import NoReCaptchaField
+from PIL import Image
 
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
 
@@ -111,7 +109,7 @@ class SearchFilter(django_filters.FilterSet):
 
     class Meta:
         model = UserProfile
-        fields = ['vouched', 'skills', 'groups', 'timezone']
+        fields = ['vouched', 'timezone']
 
     def __init__(self, *args, **kwargs):
         super(SearchFilter, self).__init__(*args, **kwargs)
@@ -163,7 +161,7 @@ class BasicInformationForm(happyforms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ('photo', 'privacy_photo', 'full_name', 'privacy_full_name',
-                  'full_name_local', 'privacy_full_name_local', 'bio', 'privacy_bio',)
+                  'bio', 'privacy_bio',)
         widgets = {'bio': forms.Textarea()}
 
     def clean_photo(self):
@@ -186,37 +184,6 @@ class BasicInformationForm(happyforms.ModelForm):
                 photo.file = cleaned_photo
                 photo.size = cleaned_photo.tell()
         return photo
-
-
-class SkillsForm(happyforms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        """Override init method."""
-        super(SkillsForm, self).__init__(*args, **kwargs)
-        # Override the url to pass along the locale.
-        # This is needed in order to post to the correct url through ajax
-        self.fields['skills'].widget.url = reverse('groups:skills-autocomplete')
-
-    class Meta:
-        model = UserProfile
-        fields = ('privacy_skills', 'skills',)
-        widgets = {
-            'skills': autocomplete.ModelSelect2Multiple(
-                url='groups:skills-autocomplete',
-                attrs={
-                    'data-placeholder': (u'Start typing to add a skill (example: Python, '
-                                         u'javascript, Graphic Design, User Research)'),
-                    'data-minimum-input-length': 2
-                }
-            )
-        }
-
-
-class LanguagesPrivacyForm(happyforms.ModelForm):
-
-    class Meta:
-        model = UserProfile
-        fields = ('privacy_languages',)
 
 
 def get_timezones_list():
@@ -312,24 +279,6 @@ class ContributionForm(happyforms.ModelForm):
                   'story_link', 'privacy_story_link',)
 
 
-class TshirtForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('tshirt', 'privacy_tshirt',)
-
-
-class GroupsPrivacyForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('privacy_groups',)
-
-
-class IRCForm(happyforms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ('ircname', 'privacy_ircname',)
-
-
 class BaseLanguageFormSet(BaseInlineFormSet):
 
     def __init__(self, *args, **kwargs):
@@ -363,94 +312,6 @@ class EmailForm(happyforms.Form):
 
     def email_changed(self):
         return self.cleaned_data['email'] != self.initial['email']
-
-
-class RegisterForm(BasicInformationForm, LocationForm):
-    optin = forms.BooleanField(
-        widget=forms.CheckboxInput(attrs={'class': 'checkbox'}),
-        required=True)
-    captcha = NoReCaptchaField()
-
-    class Meta:
-        model = UserProfile
-        fields = ('photo', 'full_name', 'timezone', 'privacy_photo', 'privacy_full_name', 'optin',
-                  'privacy_timezone', 'privacy_city', 'privacy_region', 'privacy_country',
-                  'country', 'region', 'city',)
-        widgets = {
-            'country': autocomplete.ModelSelect2(
-                url='users:country-autocomplete',
-                attrs={
-                    'data-placeholder': u'Start typing to select a country.',
-                    'data-minimum-input-length': 2
-                }
-            ),
-            'region': autocomplete.ModelSelect2(
-                url='users:region-autocomplete',
-                forward=['country'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a region.',
-                    'data-minimum-input-length': 3
-                }
-            ),
-            'city': autocomplete.ModelSelect2(
-                url='users:city-autocomplete',
-                forward=['country', 'region'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a city.',
-                    'data-minimum-input-length': 3
-                }
-            )
-        }
-
-
-class VouchForm(happyforms.Form):
-    """Vouching is captured via a user's id and a description of the reason for vouching."""
-    description = forms.CharField(
-        label=_lazy(u'Provide a reason for vouching with relevant links'),
-        widget=forms.Textarea(attrs={'rows': 10, 'cols': 20, 'maxlength': 500}),
-        max_length=500,
-        error_messages={'required': _(u'You must enter a reason for vouching for this person.')}
-    )
-
-
-class InviteForm(happyforms.ModelForm):
-    message = forms.CharField(
-        label=_lazy(u'Personal message to be included in the invite email'),
-        required=False, widget=forms.Textarea(),
-    )
-    recipient = forms.EmailField(label=_lazy(u"Recipient's email"))
-
-    def clean_recipient(self):
-        recipient = self.cleaned_data['recipient']
-        if User.objects.filter(email=recipient,
-                               userprofile__is_vouched=True).exists():
-            raise forms.ValidationError(
-                _(u'You cannot invite someone who has already been vouched.'))
-        return recipient
-
-    class Meta:
-        model = Invite
-        fields = ['recipient']
-
-
-class APIKeyRequestForm(happyforms.ModelForm):
-
-    class Meta:
-        model = APIv2App
-        fields = ('name', 'description', 'url',)
-
-
-class AbuseReportForm(happyforms.ModelForm):
-
-    class Meta:
-        model = AbuseReport
-        fields = ('type',)
-        widgets = {
-            'type': RadioSelect
-        }
-        labels = {
-            'type': _(u'What would you like to report?')
-        }
 
 
 class PhonebookSearchForm(HaystackSearchForm):

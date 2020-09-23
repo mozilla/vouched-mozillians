@@ -9,10 +9,6 @@ node('master'){
             environment = "production"
             app_id_group = ""
         break
-        case "cistest":
-            environment = "cistest"
-            app_id_group = "/staging/"
-        break
         default:
             print "Invalid branch"
             currentBuild.result = "FAILURE"
@@ -25,7 +21,7 @@ node('master'){
 
 node('mesos') {
     def image
-    def app_id = (environment == "cistest") ? "mozillianscistest" : "mozillians"
+    def app_id = "mozillians"
     def dockerRegistry = "docker-registry.ops.mozilla.community:443"
 
     stage('Prep') {

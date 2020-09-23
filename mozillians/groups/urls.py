@@ -1,12 +1,9 @@
+from dal import autocomplete
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
-
-from dal import autocomplete
-
-from mozillians.groups.models import Group, GroupAlias, Skill, SkillAlias
 from mozillians.groups import views as group_views
+from mozillians.groups.models import Group, GroupAlias, Skill, SkillAlias
 from mozillians.users.views import CuratorsAutocomplete
-
 
 OPTIONAL_MEMBERSHIP_STATUS = r'(?:/(?P<status>[-\w]+))?'
 
@@ -54,7 +51,4 @@ urlpatterns = [
         name='send_invitation_email'),
     url(r'^groups/(?P<invite_pk>\d+)/(?P<action>accept|reject)/$',
         group_views.accept_reject_invitation, name='accept_reject_invitation'),
-    # Testing
-    url(r'^groups/membership_renewal_notification', group_views.membership_renewal_notification,
-        name='membership_renewal_notification')
 ]

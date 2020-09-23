@@ -17,9 +17,6 @@
   <link rel="shortcut icon" type="image/ico" href="{{ static('mozillians/img/favicon.ico') }}">
   {% include 'includes/canonical_url.html' %}
 
-  <link rel="search" type="application/opensearchdescription+xml"
-        title="{{ _('Mozillians') }}" href="{{ url('dino_park:search_plugin') }}">
-
   {% block site_css %}
     {% compress css %}
       <link href="{{ static('mozillians/css/tabzilla.css') }}" rel="stylesheet" media="screen" />
@@ -76,7 +73,7 @@
                   <form class="navbar-search"
                         action="{{ url('phonebook:haystack_search') }}" method="GET">
                     <input type="text" name="q" class="search-query"
-                           placeholder="{{ _('Search for people, groups and more') }}" maxlength="140" required="required">
+                           placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140" required="required">
                   </form>
                 {% endblock %}
                 {% if user.is_authenticated() %}
@@ -105,20 +102,6 @@
                             {{ _('Settings') }}
                           </a>
                         </li>
-                        {% if user.userprofile.is_vouched %}
-                          <li>
-                            <a id="nav-groups" href="{{ url('groups:index_groups') }}">
-                              <i class="icon-group"></i>
-                              {{ _('Groups') }}
-                            </a>
-                          </li>
-                          <li>
-                            <a id="nav-invite" href="{{ url('phonebook:invite') }}">
-                              <i class="icon-plus-circle"></i>
-                              {{ _('Invite') }}
-                            </a>
-                          </li>
-                        {% endif %}
                         <li>
                           <a id="nav-logout" href="{{ url('phonebook:logout') }}">
                             <i class="icon-mail-reply"></i>

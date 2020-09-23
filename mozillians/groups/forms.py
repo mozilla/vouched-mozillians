@@ -1,15 +1,11 @@
+import happyforms
+from dal import autocomplete
 from django import forms
 from django.conf import settings
 from django.forms.widgets import RadioSelect
-
-import happyforms
-from dal import autocomplete
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
-
 from mozillians.groups.models import Group, Invite
-from mozillians.groups.tasks import notify_redeemer_invitation
-
 
 MAX_INVALIDATION_DAYS = 2 * 365
 
@@ -216,8 +212,6 @@ class GroupInviteForm(happyforms.ModelForm):
                 # Create the Invite objects
                 invite, created = Invite.objects.get_or_create(
                     group=self.instance, redeemer=profile, inviter=self.request.user.userprofile)
-                # Shoot an email
-                notify_redeemer_invitation.delay(invite.pk, self.instance.invite_email_text)
 
     class Meta:
         model = Group

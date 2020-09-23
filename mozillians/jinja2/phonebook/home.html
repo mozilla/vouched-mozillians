@@ -30,7 +30,7 @@
       <hr>
         <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
           <input type="text" name="q" class="search-query"
-                 placeholder="{{ _('Search for people, groups and more') }}" maxlength="140">
+                 placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140">
        </form>
     </div>
 
@@ -45,11 +45,9 @@
                 </span>
                 <blockquote>
                   <p>
-                    {% trans %}
-                      It’s an exciting time for Mozilla and the Web. Another
-                      two billion people will join the Internet community in
-                      the coming years.
-                    {% endtrans %}
+                    It’s an exciting time for Mozilla and the Web. Another
+                    two billion people will join the Internet community in
+                    the coming years.
                   </p>
                   <small>Mitchell Baker</small>
                 </blockquote>
@@ -60,12 +58,8 @@
             <section id="about">
                 <h2>{{ _('Welcome to the Mozilla community directory') }}</h2>
                 <p>
-                  {% trans %}
-                  This site lists all core individuals and groups that
-                  participate in the Mozilla Project. We call ourselves
-                  Mozillians and this is where we connect and share with
-                  one another.
-                  {% endtrans %}
+                  This site lists all vouched individuals that
+                  participated in the Mozilla Project while this site was active.
                 </p>
             </section>
           </div>
@@ -103,14 +97,7 @@
       <h1>{{ _('Hello!') }}</h1>
       <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
         <input type="text" name="q" class="search-query"
-               placeholder="{{ _('Search for people, groups and more') }}" maxlength="140">
-        <small>{{ _('Examples:') }}
-          {% trans search_url=url('phonebook:haystack_search') %}
-          <a href="{{ search_url }}?q=python">python</a>,
-          <a href="{{ search_url }}?q=berlin">Berlin</a>,
-          <a href="{{ search_url }}?q=mbrandt">mbrandt</a>
-          {% endtrans %}
-        </small>
+               placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140">
       </form>
     </article>
     <div class="row">
@@ -129,38 +116,6 @@
               </section>
             {% endif %}
             {% endwith %}
-            {% set access_groups = user.userprofile.get_annotated_access_groups() %}
-            {% if access_groups %}
-              <section class="groups">
-                <h4>{{ _('Access Groups') }}</h4>
-                {% for group in access_groups -%}
-                  <a href="{{ url('groups:show_group', group.url) }}">
-                    {%- if group.curators.filter(id=user.userprofile.id).exists() -%}
-                      <i class="icon-crown"></i>
-                    {% endif %}
-                    {{ group.name }}
-                    {%- if group.pending %} {{ _('(membership requested)') }}{% endif -%}
-                  </a>
-                  {%- if not loop.last -%},{% endif %}
-                {% endfor %}
-              </section>
-            {% endif %}
-            {% set tags = user.userprofile.get_annotated_tags() %}
-            {% if tags %}
-              <section class="groups">
-                <h4>{{ _('Tags') }}</h4>
-                {% for tag in tags -%}
-                  <a href="{{ url('groups:show_group', tag.url) }}">
-                    {%- if tag.curators.filter(id=user.userprofile.id).exists() -%}
-                      <i class="icon-crown"></i>
-                    {% endif %}
-                    {{ tag.name }}
-                    {%- if tag.pending %} {{ _('(membership requested)') }}{% endif -%}
-                  </a>
-                  {%- if not loop.last -%},{% endif %}
-                {% endfor %}
-              </section>
-            {% endif %}
             {% if user.userprofile.languages.exists() %}
               <section class="languages">
                 <h4>{{ _('Languages') }}</h4>
@@ -170,23 +125,6 @@
                 {% endfor %}
               </section>
             {% endif %}
-            {% if user.userprofile.skills.count() %}
-              <section class="skills">
-                <h4>{{ _('Skills') }}</h4>
-                {% for skill in user.userprofile.skills.all() %}
-                  <a href="{{ url('groups:show_skill', skill.url) }}">{{ skill.name }}</a>
-                  {%- if not loop.last %},{% endif %}
-                {% endfor %}
-              </section>
-            {% endif %}
-
-            {# Using this placeholder code for now.
-            {% if user.userprofile.badges.count() %}
-              {% trans badges_count=user.userprofile.badges.count() %}
-                Has {{ badges_count }} skills.
-              {% endtrans %}
-            {% endif %}
-            #}
            </div>
         </article>
       </div>
@@ -196,13 +134,6 @@
             <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
             <input type="text" name="q" class="search-query"
                    placeholder="{{ _('Search for people, groups and more') }}" maxlength="140">
-            <small>{{ _('Examples:') }}
-              {% trans search_url=url('phonebook:haystack_search') %}
-              <a href="{{ search_url }}?q=python">python</a>,
-              <a href="{{ search_url }}?q=berlin">Berlin</a>,
-              <a href="{{ search_url }}?q=mbrandt">mbrandt</a>
-              {% endtrans %}
-            </small>
           </form>
         </article>
         <article id="content-info">
@@ -239,34 +170,6 @@
                     can help out.
                   </p>
                 {% endtrans %}
-                {% if user.userprofile.is_vouched %}
-                  <a href="{{ url('groups:index_functional_areas') }}">{{ _('Browse functional areas') }} <i class="icon-arrow-right"></i></a>
-                {% else %}
-                  {% trans %}
-                    <p>Become <a href='https://wiki.mozilla.org/Mozillians/Vouching'>vouched</a> and you can browse functional areas!</p>
-                  {% endtrans %}
-                {% endif %}
-              </section>
-            </div>
-            <div class="col-md-6">
-              <section class="groups">
-                <span class="icon">
-                  <img src="{{ static('mozillians/img/homepage-groups.jpg') }}" alt="Groups">
-                </span>
-                <h2>{{ _('Groups') }}</h2>
-                {% trans %}
-                  <p>
-                    Find and join groups centered around interests,
-                    technologies, geographies and more.
-                  </p>
-                {% endtrans %}
-                {% if user.userprofile.is_vouched %}
-                  <a href="{{ url('groups:index_groups') }}">{{ _('Browse groups') }} <i class="icon-arrow-right"></i></a>
-                {% else %}
-                  {% trans %}
-                    <p>Become <a href='https://wiki.mozilla.org/Mozillians/Vouching'>vouched</a> and you can browse groups!</p>
-                  {% endtrans %}
-                {% endif %}
               </section>
             </div>
           </div>
@@ -276,30 +179,6 @@
   {% endif %}
 
 {% endblock content %}
-
-{% block get_involved %}
-  {% if not user.is_authenticated() %}
-    <article id="get-involved">
-      <div class="container">
-        <div class="content">
-          <h2>{{ _('How do I get involved?') }}</h2>
-          <p>
-            {% trans %}
-            Mozilla exists to promote openness, innovation and
-            opportunity on the Internet. The success of our mission
-            depends on participation from people like you. Find out
-            how you can get involved to help make a difference in the
-            lives of people everywhere.
-            {% endtrans %}
-          </p>
-          {% trans contribute_url='https://activate.mozilla.community/' %}
-            <a href="{{ contribute_url }}">Get involved</a>
-          {% endtrans %}
-        </div>
-      </div>
-    </article>
-  {% endif %}
-{% endblock get_involved %}
 
 {% block page_js %}
   {% compress js %}
