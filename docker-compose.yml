@@ -11,8 +11,6 @@ services:
     volumes:
       - mariadb_volume:/var/lib/mysql
       - ./docker/files/mariadb.cnf:/etc/mysql/conf.d/my.cnf
-  es:
-    image: elasticsearch:2.4.5
   memcached:
     image: memcached
   broker:
@@ -29,7 +27,6 @@ services:
       - .:/code
     links:
       - db
-      - es
       - memcached
       - broker
 volumes:

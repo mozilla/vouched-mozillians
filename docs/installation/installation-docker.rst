@@ -56,9 +56,9 @@ Building mozillians
 
      $ cp mozillians/env-dist mozillians/.env
 
-#. Start ``MySQL`` and ``ElasticSearch`` containers::
+#. Start ``MySQL`` container::
 
-     $ docker-compose up -d db es
+     $ docker-compose up -d db
 
 #. Update the product details::
 

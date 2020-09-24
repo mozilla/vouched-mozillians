@@ -21,18 +21,6 @@ urlpatterns = [
     url(r'^delete/$', phonebook_views.delete, name='profile_delete'),
     url(r'^user/delete_idp_profiles/$', phonebook_views.delete_idp_profiles,
         name='delete_idp_profiles'),
-    # Haystack search
-    url(r'^search/$', allow_public(phonebook_views.PhonebookSearchView.as_view()),
-        name='haystack_search'),
-    url(r'^country/(?P<country>[A-Za-z0-9 \.\,]+)/$',
-        phonebook_views.PhonebookSearchView.as_view(), name='list_country'),
-    url(r'^country/(?P<country>[A-Za-z0-9 \.\,]+)/city/(?P<city>.+)/$',
-        phonebook_views.PhonebookSearchView.as_view(), name='list_city'),
-    url((r'^country/(?P<country>[A-Za-z0-9 \.\,]+)/'
-         'region/(?P<region>.+)/city/(?P<city>.+)/$'),
-        phonebook_views.PhonebookSearchView.as_view(), name='list_region_city'),
-    url(r'^country/(?P<country>[A-Za-z0-9 \.]+)/region/(?P<region>.+)/$',
-        phonebook_views.PhonebookSearchView.as_view(), name='list_region'),
     # Static pages need csrf for post to work
     url(r'^about/$',
         allow_public(TemplateView.as_view(template_name='phonebook/about.html')),

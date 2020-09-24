@@ -69,13 +69,6 @@
                 <a class="brand" href="{{ url('phonebook:home') }}">
                   <img id="mozillians-logo" src="{{ static('mozillians/img/mozillians-logo.png') }}" alt="Mozillians">
                 </a>
-                {% block search %}
-                  <form class="navbar-search"
-                        action="{{ url('phonebook:haystack_search') }}" method="GET">
-                    <input type="text" name="q" class="search-query"
-                           placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140" required="required">
-                  </form>
-                {% endblock %}
                 {% if user.is_authenticated() %}
                   {% if user.userprofile.is_complete %}
                     <div id="nav-main">

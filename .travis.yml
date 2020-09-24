@@ -13,7 +13,6 @@ env:
   DEV=True
   ES_CONNECTION=local
 services:
-  - elasticsearch
   - mysql
 before_install:
   - pip install flake8
