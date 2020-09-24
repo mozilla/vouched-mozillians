@@ -169,7 +169,6 @@ def edit_profile(request):
     ctx.update({
         'profile': request.user.userprofile,
         'vouch_threshold': settings.CAN_VOUCH_THRESHOLD,
-        'appsv2': profile.apps.filter(enabled=True),
         'forms_valid': forms_valid
     })
 
