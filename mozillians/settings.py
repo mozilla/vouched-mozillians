@@ -53,7 +53,6 @@ INSTALLED_APPS = (
     'mozilla_django_oidc',
     'cities_light',
     'axes',
-    'haystack',
 
     'mozillians',
     'mozillians.users',
@@ -171,7 +170,6 @@ EXEMPT_L10N_URLS = [
     '^/api/v3/',
     '^/admin/',
     '^/beta/.*',
-    '^/opensearch.xml',
 ]
 
 # Tells the product_details module where to find our local JSON files.
@@ -365,62 +363,6 @@ OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
 # AWS credentials
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-
-# Django Haystack
-ES_DISABLED = config('ES_DISABLED', default=True)
-ES_HOST = config('ES_HOST', default='127.0.0.1:9200')
-ES_PROTOCOL = config('ES_PROTOCOL', default='http://')
-
-
-def _lazy_haystack_setup():
-    from django.conf import settings
-    from elasticsearch import RequestsHttpConnection
-    from mozillians.common.search import AWSRequestsHttpConnection
-
-    es_connection = config('ES_CONNECTION', default='aws')
-    es_connection_class = {
-        'aws': AWSRequestsHttpConnection,
-        'local': RequestsHttpConnection
-    }
-
-    es_url = '%s%s' % (settings.ES_PROTOCOL, settings.ES_HOST)
-    es_index_name = config('ES_INDEX_NAME', default='mozillians_haystack')
-    haystack_connections = {
-        'default': {
-            'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
-            'URL': es_url,
-            'INDEX_NAME': es_index_name,
-            'KWARGS': {
-                'connection_class': es_connection_class[es_connection]
-            }
-        },
-        'tmp': {
-            'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
-            'URL': es_url,
-            'INDEX_NAME': 'tmp_{}'.format(es_index_name),
-            'KWARGS': {
-                'connection_class': es_connection_class[es_connection]
-            }
-        },
-        'current': {
-            'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
-            'URL': es_url,
-            'INDEX_NAME': 'current_{}'.format(es_index_name),
-            'KWARGS': {
-                'connection_class': es_connection_class[es_connection]
-            }
-        }
-    }
-
-    return haystack_connections
-
-
-HAYSTACK_CONNECTIONS = lazy(_lazy_haystack_setup, dict)()
-HAYSTACK_SIGNAL_PROCESSOR = 'mozillians.common.signals.SearchSignalProcessor'
-# Defaults to the number of the nodes in prod ES cluster
-ES_REINDEX_WORKERS_NUM = config('ES_REINDEX_WORKERS_NUM', default=3, cast=int)
-ES_REINDEX_BATCHSIZE = config('ES_REINDEX_BATCHSIZE', default=100, cast=int)
-ES_REINDEX_TIMEOUT = config('ES_REINDEX_TIMEOUT', default=1800, cast=int)
 
 # Setup django-axes
 AXES_PROXY_COUNT = 1

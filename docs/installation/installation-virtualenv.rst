@@ -16,7 +16,7 @@ Dependencies
 **Prerequisites:** You'll need python2.7, python2.7-dev, virtualenv, pip,
 a C compiler (for building some of the Python packages, like the DB interface),
 mysqlclient and mysql-dev (or the equivalent on your system), a MySQL server, `gettext`_,
-git, and lessc. Also, since we use elasticsearch, you will need a JAVA runtime environment.
+git, and lessc.
 
 There are almost certainly other requirements that
 we're so used to having installed we've forgotten we have them, so don't be shy
@@ -104,17 +104,6 @@ When you want to start contributing...
    The provided configuration uses a MySQL database named `mozillians` and
    accesses it locally using the user `mozillians`.
 
-#. Download ElasticSearch::
-
-     (venv)$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-2.4.5.tar.gz
-     (venv)$ tar zxf elasticsearch-2.4.5.tar.gz
-
-   and run::
-
-     (venv)$ ./elasticsearch-2.4.5/bin/elasticsearch -d
-
-  This will run the elasticsearch instance in the background.
-
 
 ***********
 MySQL setup
@@ -184,8 +173,7 @@ Running Mozillians
 
 #. When you're done:
 
-   When you are done with your coding session, do not forget to kill
-   the `elasticsearch` process and deactivate your virtual python
+   When you are done with your coding session, do not forget to deactivate your virtual python
    environment by running::
 
      (venv)$ deactivate
@@ -196,10 +184,6 @@ Running Mozillians
    Next time, before starting you will need to activate your environment by typing::
 
      $ . $VIRTUAL_ENV/bin/activate
-
-   and start `elasticsearch` server again::
-
-     (venv)$ ./elasticsearch-2.4.5/bin/elasticsearch -d
 
 Have fun!
 

@@ -352,7 +352,7 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
 
     fieldsets = (
         ('Account', {
-            'fields': ('full_name', 'full_name_local', 'username', 'email', 'photo',
+            'fields': ('full_name', 'username', 'email', 'photo',
                        'auth0_user_id', 'is_staff',)
         }),
         (None, {
@@ -368,12 +368,11 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
             'fields': ('country', 'region', 'city', 'lng', 'lat', 'timezone')
         }),
         ('Privacy Settings', {
-            'fields': ('privacy_photo', 'privacy_full_name', 'privacy_full_name_local',
-                       'privacy_ircname', 'privacy_email', 'privacy_bio',
-                       'privacy_city', 'privacy_region', 'privacy_country',
-                       'privacy_groups', 'privacy_skills', 'privacy_languages',
+            'fields': ('privacy_photo', 'privacy_full_name',
+                       'privacy_email', 'privacy_bio',
+                       'privacy_city', 'privacy_region', 'privacy_country', 'privacy_languages',
                        'privacy_date_mozillian', 'privacy_timezone',
-                       'privacy_tshirt', 'privacy_title'),
+                       'privacy_title'),
             'classes': ('collapse',)
         }),
     )

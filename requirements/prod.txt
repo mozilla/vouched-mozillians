@@ -25,9 +25,6 @@ BeautifulSoup==3.2.1 \
 djangorestframework==3.7.7 \
     --hash=sha256:1f6baf40ed456ed2af6bd1a4ff8bbc3503cebea16509993aea2b7085bc097766 \
     --hash=sha256:9f9e94e8d22b100ed3a43cee8c47a7ff7b185e778a1f2da9ec5c73fc4e081b87
-elasticsearch==2.4.1 \
-    --hash=sha256:bb8f9a365ba6650d599428538c8aed42033264661d8f7d353da59d5892305f72 \
-    --hash=sha256:fead47ebfcaabd1c53dbfc21403eb99ac207eef76de8002fe11a1c8ec9589ce2
 Jinja2==2.10.1 \
     --hash=sha256:065c4f02ebe7f7cf559e49ee5a95fb800a9e4528727aec6f24402a5374c65013 \
     --hash=sha256:14dd6caf1527abb21f08f86c784eac40853ba93edb79552aa1e4b8aef1b61c7b
@@ -273,8 +270,6 @@ dj-database-url==0.5.0 \
 whitenoise==3.3.1 \
     --hash=sha256:15f43b2e701821b95c9016cf469d29e2a546cb1c7dead584ba82c36f843995cf \
     --hash=sha256:9d81515f2b5b27051910996e1e860b1332e354d9e7bcf30c98f21dcb6713e0dd
-django-haystack==2.8.1 \
-    --hash=sha256:8b54bcc926596765d0a3383d693bcdd76109c7abb6b2323b3984a39e3576028c
 boto3==1.9.220 \
     --hash=sha256:654c7ebd6d089d5af634a8121f3960e50e283643660abcba07e602ac237f4839 \
     --hash=sha256:f114b586c307f73a46d6dfe9dfb1c37865354f48fc749794d96517527424d1f5

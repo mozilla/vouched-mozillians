@@ -14,10 +14,6 @@ SECRET_KEY = 'correcthorsebatterystaple'
 # Debug flags
 DEBUG = True
 DEV = True
-# ElasticSearch
-ES_DISABLED = True
-ES_URLS = 'http://127.0.0.1:9200'
-ES_INDEXING_TIMEOUT = 10
 # Auth0 confiuguration
 OIDC_STORE_ACCESS_TOKEN = True
 OIDC_OP_DOMAIN = 'auth.mozilla.auth0.com'

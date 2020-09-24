@@ -28,10 +28,6 @@
       {% endif %}
 
       <hr>
-        <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
-          <input type="text" name="q" class="search-query"
-                 placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140">
-       </form>
     </div>
 
     <article id="information">
@@ -95,10 +91,6 @@
     {# This is where the logged in homepage view starts. #}
     <article class="search-info search-top">
       <h1>{{ _('Hello!') }}</h1>
-      <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
-        <input type="text" name="q" class="search-query"
-               placeholder="{{ _('Search for vouched mozillians') }}" maxlength="140">
-      </form>
     </article>
     <div class="row">
       <div class="col-md-3">
@@ -131,10 +123,6 @@
       <div class="col-md-9">
         <article class="search-info search-right">
           <h1>{{ _('Hello!') }}</h1>
-            <form id="homepage-search" action="{{ url('phonebook:haystack_search') }}" method="GET">
-            <input type="text" name="q" class="search-query"
-                   placeholder="{{ _('Search for people, groups and more') }}" maxlength="140">
-          </form>
         </article>
         <article id="content-info">
           <section class="announcements-mozfacts">

@@ -14,8 +14,6 @@ from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import RadioSelect
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
-from haystack.forms import ModelSearchForm as HaystackSearchForm
-from haystack.query import SQ, SearchQuerySet
 from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.models import Invite
 from mozillians.phonebook.validators import validate_username
@@ -24,7 +22,6 @@ from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import PUBLIC
 from mozillians.users.models import (ExternalAccount, IdpProfile, Language,
                                      UserProfile)
-from mozillians.users.search_indexes import IdpProfileIndex, UserProfileIndex
 from nocaptcha_recaptcha.fields import NoReCaptchaField
 from PIL import Image
 
@@ -312,106 +309,3 @@ class EmailForm(happyforms.Form):
 
     def email_changed(self):
         return self.cleaned_data['email'] != self.initial['email']
-
-
-class PhonebookSearchForm(HaystackSearchForm):
-    """Django Haystack's search form."""
-
-    def __init__(self, *args, **kwargs):
-        """Initialize search form.
-
-        Get the user object passed from the CBV.
-        """
-        self.request = kwargs.pop('request', None)
-        self.country = kwargs.pop('country', '')
-        self.region = kwargs.pop('region', '')
-        self.city = kwargs.pop('city', '')
-        super(PhonebookSearchForm, self).__init__(*args, **kwargs)
-
-    def clean(self, *args, **kwargs):
-        cdata = super(PhonebookSearchForm, self).clean(*args, **kwargs)
-        if not (self.country or self.city or self.region) and not cdata.get('q', '').strip():
-            self.errors['q'] = self.error_class([u'This field is required.'])
-        if ('users.userprofile' in cdata['models']
-            or 'users.idpprofile' in cdata['models']
-                or not cdata['models']):
-            cdata['is_profile_query'] = True
-        if ('groups.group' in cdata['models'] or not cdata['models'] and not
-                self.request.user.is_anonymous()):
-            cdata['is_group_query'] = True
-        return cdata
-
-    def search(self):
-        """Search on the ES index the query sting provided by the user."""
-
-        search_term = self.cleaned_data.get('q')
-        profile = None
-        location_query = {}
-
-        if self.country:
-            location_query['country'] = self.country
-            location_query['privacy_country__gte'] = None
-        if self.region:
-            location_query['region'] = self.region
-            location_query['privacy_region__gte'] = None
-        if self.city:
-            location_query['city'] = self.city
-            location_query['privacy_city__gte'] = None
-
-        try:
-            profile = self.request.user.userprofile
-        except AttributeError:
-            # This is an AnonymousUser
-            privacy_level = PUBLIC
-        else:
-            privacy_level = profile.privacy_level
-
-        if profile and profile.is_vouched:
-            # If this is empty, it will default to all models.
-            search_models = self.get_models()
-        else:
-            # Anonymous and un-vouched users cannot search groups
-            search_models = [UserProfile, IdpProfile]
-
-        if location_query:
-            for k in location_query.keys():
-                if k.startswith('privacy_'):
-                    location_query[k] = privacy_level
-            return SearchQuerySet().filter(**location_query).load_all() or self.no_query_found()
-
-        # Calling super will handle with form validation and
-        # will also search in fields that are not explicit queried through `text`
-        sqs = super(PhonebookSearchForm, self).search().models(*search_models)
-
-        if not sqs:
-            return self.no_query_found()
-
-        query = SQ()
-        q_args = {}
-        # Profiles Search
-        all_indexed_fields = UserProfileIndex.fields.keys() + IdpProfileIndex.fields.keys()
-        privacy_indexed_fields = [field for field in all_indexed_fields
-                                  if field.startswith('privacy_')]
-        # Every profile object in mozillians.org has privacy settings.
-        # Let's take advantage of this and compare the indexed fields
-        # with the ones listed in a profile in order to build the query to ES.
-        for p_field in privacy_indexed_fields:
-            # this is the field that we are going to query
-            q_field = p_field.split('_', 1)[1]
-            # The user needs to have less or equal permission number with the queried field
-            # (lower number, means greater permission level)
-            q_args = {
-                q_field: search_term,
-                '{0}__gte'.format(p_field): privacy_level
-            }
-            query.add(SQ(**q_args), SQ.OR)
-
-        # Username is always public
-        query.add(SQ(**{'username': search_term}), SQ.OR)
-
-        # Group Search
-        if not search_models or Group in search_models:
-            # Filter only visible groups.
-            query.add(SQ(**{'visible': True}), SQ.OR)
-
-        return sqs.filter(query).load_all()

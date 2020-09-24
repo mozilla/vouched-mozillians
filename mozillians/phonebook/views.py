@@ -24,8 +24,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import View
-from haystack.generic_views import SearchView
-from haystack.query import EmptySearchQuerySet
 from mozilla_django_oidc.utils import absolutify, import_from_settings
 from mozilla_django_oidc.views import (OIDCAuthenticationRequestView,
                                        get_next_url)
@@ -278,43 +276,6 @@ def capture_csp_violation(request):
         data=data)
 
     return HttpResponse('Captured CSP violation, thanks for reporting.')
-
-
-# Django haystack
-@allow_public
-class PhonebookSearchView(SearchView):
-    form_class = forms.PhonebookSearchForm
-    template_name = 'phonebook/search.html'
-
-    def form_invalid(self, form):
-        context = self.get_context_data(**{
-            self.form_name: form,
-            'object_list': EmptySearchQuerySet()
-        })
-        return self.render_to_response(context)
-
-    def get_form_kwargs(self):
-        """Pass the request.user to the form's kwargs."""
-        kwargs = {'initial': self.get_initial()}
-        if self.request.method == 'GET':
-            kwargs.update({
-                'data': self.request.GET
-            })
-        kwargs.update({'searchqueryset': self.get_queryset()})
-        kwargs['request'] = self.request
-        # pass the parameters from the url
-        kwargs.update(self.kwargs)
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        """Override method to pass more context data in the template."""
-        context_data = super(PhonebookSearchView, self).get_context_data(**kwargs)
-        context_data['show_pagination'] = context_data['is_paginated']
-        context_data['search_form'] = context_data['form']
-        context_data['country'] = self.kwargs.get('country')
-        context_data['region'] = self.kwargs.get('region')
-        context_data['city'] = self.kwargs.get('city')
-        return context_data
 
 
 @allow_unvouched
