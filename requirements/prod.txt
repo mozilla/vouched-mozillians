@@ -1,9 +1,5 @@
 # from requirements/prod.txt
 
-django-storages==1.7.1 \
-    --hash=sha256:b1a63cd5ea286ee5a9fb45de6c3c5c0ae132d58308d06f1ce9865cfcd5e470a7
-django-cronjobs==0.2.3 \
-    --hash=sha256:177295b1442400c92cdb67e8e18f9ff5946fb442f85813b9d0837823722ea08d
 django-mozilla-product-details==0.13 \
     --hash=sha256:4ffa5a104f53645460a50c9342a41e3ea02d432851becf56e820d42faa94839f \
     --hash=sha256:ce97fc2533aa06560d9b438ebba2522dc0b2ada86d6e0537cfb5ac06db1a6aa2
@@ -333,8 +329,6 @@ configobj==5.0.6 \
 everett==0.9 \
     --hash=sha256:05b0d0bae138a3b1a7c365bdd991c0a5b06f20c2e01d6721896098ac93cf7ee9 \
     --hash=sha256:02a43a2b4194e6ed40757851b37f5acf3c086f37e7e8109a385a7198cfbbc51b
-https://github.com/mozilla-iam/pykmssig/archive/v0.0.8.zip#egg=pykmssig \
-    --hash=sha256:e117b5e66ddbdb84263ac100139445a9c4c8eba2ea740fb6aec6009619ed7556
 pluginbase==0.7 \
     --hash=sha256:c0abe3218b86533cca287e7057a37481883c07acef7814b70583406938214cc8
 jsonschema==2.6.0 \
@@ -550,6 +544,3 @@ backports.ssl_match_hostname==3.7.0.1 \
     --hash=sha256:bb82e60f9fbf4c080eabd957c39f0641f0fc247d9a16e31e26d594d8f42b9fd2
 mysqlclient==1.4.4 \
     --hash=sha256:9c737cc55a5dc8dd3583a942d5a9b21be58d16f00f5fefca4e575e7d9682e98c
-requests-aws4auth==0.9 \
-    --hash=sha256:c9973af472d6d358ee301f077608361e078642aa019785139b588d526f50a23c \
-    --hash=sha256:e20e4941ccd5706973068f9214d40cb2e669461536b3a57b9ac824ae87744c2c

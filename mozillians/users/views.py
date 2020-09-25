@@ -5,8 +5,6 @@ from dal import autocomplete
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.http import JsonResponse
-from pytz import country_timezones
 
 from mozillians.common.templatetags.helpers import get_object_or_none
 from mozillians.users.models import IdpProfile, UserProfile

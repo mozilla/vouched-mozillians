@@ -2,21 +2,15 @@ import re
 from datetime import datetime
 
 import happyforms
-from cStringIO import StringIO
-from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
-from django.core.files.uploadedfile import UploadedFile
 from django.forms.models import BaseInlineFormSet, inlineformset_factory
-from django.forms.widgets import RadioSelect
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
 
-from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.validators import validate_username
 from mozillians.phonebook.widgets import MonthYearWidget
 from mozillians.users import get_languages_for_locale
-from mozillians.users.managers import PUBLIC
 from mozillians.users.models import (ExternalAccount, IdpProfile, Language,
                                      UserProfile)
 

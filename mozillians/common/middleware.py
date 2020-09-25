@@ -4,17 +4,13 @@ from contextlib import contextmanager
 from warnings import warn
 
 from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse as django_reverse
-from django.http import (HttpResponse, HttpResponsePermanentRedirect,
-                         HttpResponseRedirect)
+from django.http import HttpResponsePermanentRedirect
 from django.utils.encoding import iri_to_uri, smart_str
 from django.utils.translation import activate
 from django.utils.translation import ugettext_lazy as _lazy
+
 from mozillians.common import urlresolvers
-from mozillians.common.templatetags.helpers import redirect, urlparams
-from mozillians.common.urlresolvers import reverse
+from mozillians.common.templatetags.helpers import urlparams
 
 LOGIN_MESSAGE = _lazy(u'You must be logged in to continue.')
 GET_VOUCHED_MESSAGE = _lazy(u'You must be vouched to continue.')
@@ -134,35 +130,3 @@ class ReferrerPolicyMiddleware(object):
             response[referrer_header_name] = 'no-referrer'
 
         return response
-
-
-class DinoParkLoginMiddleware(object):
-    """Seamless login for dinopark behind OIDC proxy"""
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        # Don't apply middleware for EXEMPT_L10N_URLS
-        for view_url in settings.EXEMPT_L10N_URLS:
-            if re.search(view_url, request.path):
-                return self.get_response(request)
-
-        if not request.user.is_authenticated():
-            return HttpResponseRedirect(django_reverse('oidc_authentication_init'))
-
-        if request.user.userprofile and request.user.userprofile.is_complete:
-            return HttpResponseRedirect('/beta')
-
-        return self.get_response(request)
-
-
-class HealthcheckMiddleware(object):
-    """Add middleware for healthcheck paths"""
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        if request.path_info == '/healthcheck':
-            return HttpResponse('OK')
-        return self.get_response(request)

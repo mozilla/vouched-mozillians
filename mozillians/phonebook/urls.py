@@ -1,8 +1,7 @@
 from django.conf.urls import url
-from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 
-from mozillians.common.decorators import allow_public, allow_unvouched
+from mozillians.common.decorators import allow_public
 from mozillians.phonebook import views as phonebook_views
 
 app_name = 'mozillians'

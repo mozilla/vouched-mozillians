@@ -10,7 +10,6 @@ except ImportError:
     newrelic = False
 
 
-
 if newrelic:
     newrelic_ini = os.getenv('NEWRELIC_PYTHON_INI_FILE', False)
     if newrelic_ini:

@@ -1,6 +1,3 @@
-import datetime
-
-from mozillians.phonebook.models import Invite
 from mozillians.users.models import IdpProfile
 
 

@@ -5,31 +5,16 @@ from itertools import chain
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.storage import default_storage
-from django.core.mail import send_mail
 from django.db import models
-from django.db.models import Manager, ManyToManyField, Q
-from django.template.loader import get_template
+from django.db.models import Manager, ManyToManyField
 from django.utils.encoding import iri_to_uri
 from django.utils.http import urlquote
-from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
-from PIL import Image
 from product_details import product_details
-from pytz import common_timezones
-from sorl.thumbnail import ImageField, get_thumbnail
 
-from mozillians.common import utils
-from mozillians.common.templatetags.helpers import (absolutify, gravatar,
-                                                    offset_of_timezone)
 from mozillians.common.urlresolvers import reverse
-from mozillians.phonebook.validators import (validate_discord, validate_email,
-                                             validate_linkedin,
-                                             validate_phone_number,
-                                             validate_twitter,
-                                             validate_username_not_url,
-                                             validate_website)
+from mozillians.phonebook.validators import validate_email
 from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
                                        PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,

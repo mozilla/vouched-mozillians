@@ -1,10 +1,7 @@
-from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseNotAllowed
 from django.test import Client
-from django.test.utils import override_settings, override_script_prefix
-
-from mock import patch
+from django.test.utils import override_script_prefix
 from nose.tools import eq_, ok_
 
 from mozillians.common.tests import TestCase, requires_login

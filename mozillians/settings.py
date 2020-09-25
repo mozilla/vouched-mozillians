@@ -3,11 +3,9 @@
 # Django settings for the mozillians project.
 import json
 import os.path
-import sys
 
 from decouple import Csv, config
 from dj_database_url import parse as db_url
-from django.utils.functional import lazy
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 from unipath import Path
 from urlparse import urljoin
@@ -31,9 +29,6 @@ STATIC_URL = STATIC_HOST + '/static/'
 # Application definition
 ########################
 INSTALLED_APPS = (
-    'dal',
-    'dal_select2',
-
     # Django contrib apps
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,7 +40,6 @@ INSTALLED_APPS = (
     # Third-party apps, patches, fixes
     'django_jinja',
     'compressor',
-    'cronjobs',
     'django_nose',
     'session_csrf',
     'product_details',
@@ -71,7 +65,6 @@ INSTALLED_APPS = (
 )
 
 MIDDLEWARE = [
-    'mozillians.common.middleware.HealthcheckMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
     'django.middleware.common.CommonMiddleware',
@@ -120,8 +113,6 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1', cast=Csv())
 
 # Site ID is used by Django's Sites framework.
 SITE_ID = 1
-
-HEALTHCHECKS_IO_URL = config('HEALTHCHECKS_IO_URL', default='')
 
 X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='DENY')
 
@@ -285,6 +276,7 @@ LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/login/')
 # django-mobility
 MOBILE_COOKIE = config('MOBILE_COOKIE', default='mobile')
 
+
 # Django OIDC
 def _username_algo(email):
     from mozillians.common.authbackend import calculate_username
@@ -434,6 +426,7 @@ TEMPLATES = [
         }
     }
 ]
+
 
 def COMPRESS_JINJA2_GET_ENVIRONMENT():
     from django.template import engines
