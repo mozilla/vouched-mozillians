@@ -3,12 +3,10 @@ from datetime import date
 
 from django.core.validators import URLValidator
 from django.forms import ValidationError
-from django.utils.translation import get_language
 
 from django_jinja import library
 import jinja2
 
-from mozillians.users import get_languages_for_locale
 from mozillians.users.models import IdpProfile
 
 
@@ -36,23 +34,6 @@ def get_mozillian_years(userprofile):
         year_difference = date.today().year - userprofile.date_mozillian.year
         return year_difference
     return None
-
-
-@library.global_function
-def langcode_to_name(code, locale=None):
-    """Return the language name for the code in locale.
-
-    If locale is None return in current activated language.
-    """
-
-    if not locale:
-        locale = get_language()
-    translated_languages = get_languages_for_locale(locale)
-    try:
-        lang = dict(translated_languages)[code]
-    except KeyError:
-        return code
-    return lang
 
 
 @library.filter

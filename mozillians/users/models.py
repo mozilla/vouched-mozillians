@@ -15,7 +15,6 @@ from product_details import product_details
 
 from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.validators import validate_email
-from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
                                        PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,
                                        PUBLIC, PUBLIC_INDEXABLE_FIELDS,
@@ -47,7 +46,6 @@ class UserProfilePrivacyModel(models.Model):
     privacy_full_name = PrivacyField()
     privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE,
                                  default=MOZILLIANS)
-    privacy_languages = PrivacyField()
     privacy_date_mozillian = PrivacyField()
     privacy_title = PrivacyField()
 
@@ -158,7 +156,6 @@ class UserProfile(UserProfilePrivacyModel):
             'alternate_emails': '_alternate_emails',
             'email': '_primary_email',
             'is_public_indexable': '_is_public_indexable',
-            'languages': '_languages',
             'vouches_made': '_vouches_made',
             'vouches_received': '_vouches_received',
             'vouched_by': '_vouched_by',
@@ -207,13 +204,6 @@ class UserProfile(UserProfilePrivacyModel):
             if getattr(self, field, None) and getattr(self, 'privacy_%s' % field, None) == PUBLIC:
                 return True
         return False
-
-    @property
-    def _languages(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
-        if self._privacy_level > _getattr('privacy_languages'):
-            return _getattr('language_set').none()
-        return _getattr('language_set').all()
 
     @property
     def _primary_email(self):
@@ -532,32 +522,3 @@ class ExternalAccount(models.Model):
 
     def __unicode__(self):
         return self.type
-
-
-class Language(models.Model):
-    code = models.CharField(max_length=63, choices=get_languages_for_locale('en'))
-    userprofile = models.ForeignKey(UserProfile)
-
-    class Meta:
-        ordering = ['code']
-        unique_together = ('code', 'userprofile')
-
-    def __unicode__(self):
-        return self.code
-
-    def get_english(self):
-        return self.get_code_display()
-
-    def get_native(self):
-        if not getattr(self, '_native', None):
-            languages = get_languages_for_locale(self.code)
-            for code, language in languages:
-                if code == self.code:
-                    self._native = language
-                    break
-        return self._native
-
-    def unique_error_message(self, model_class, unique_check):
-        if (model_class == type(self) and unique_check == ('code', 'userprofile')):
-            return _('This language has already been selected.')
-        return super(Language, self).unique_error_message(model_class, unique_check)

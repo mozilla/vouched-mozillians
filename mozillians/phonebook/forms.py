@@ -10,8 +10,7 @@ from django.utils.translation import ugettext_lazy as _lazy
 
 from mozillians.phonebook.validators import validate_username
 from mozillians.phonebook.widgets import MonthYearWidget
-from mozillians.users import get_languages_for_locale
-from mozillians.users.models import (ExternalAccount, IdpProfile, Language,
+from mozillians.users.models import (ExternalAccount, IdpProfile,
                                      UserProfile)
 
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
@@ -125,29 +124,6 @@ class ContributionForm(happyforms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ('date_mozillian', 'privacy_date_mozillian',)
-
-
-class BaseLanguageFormSet(BaseInlineFormSet):
-
-    def __init__(self, *args, **kwargs):
-        self.locale = kwargs.pop('locale', 'en')
-        super(BaseLanguageFormSet, self).__init__(*args, **kwargs)
-
-    def add_fields(self, form, index):
-        super(BaseLanguageFormSet, self).add_fields(form, index)
-        choices = [('', '---------')] + get_languages_for_locale(self.locale)
-        form.fields['code'].choices = choices
-
-    class Meta:
-        models = Language
-        fields = ['code']
-
-
-LanguagesFormset = inlineformset_factory(UserProfile, Language,
-                                         formset=BaseLanguageFormSet,
-                                         extra=1,
-                                         fields='__all__')
-
 
 class EmailForm(happyforms.Form):
     email = forms.EmailField(label=_lazy(u'Email'))

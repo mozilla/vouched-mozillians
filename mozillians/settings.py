@@ -133,21 +133,15 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # L10n
 TIME_ZONE = config('TIME_ZONE', default='America/Los_Angeles')
-USE_I18N = config('USE_I18N', default=True, cast=bool)
-USE_L10N = config('USE_L10N', default=True, cast=bool)
 TEXT_DOMAIN = 'django'
 STANDALONE_DOMAINS = [TEXT_DOMAIN, 'djangojs']
 LANGUAGE_CODE = config('LANGUAGE_CODE', default='en-US')
-LOCALE_PATHS = [Path('locale').resolve()]
 # Accepted locales
 PROD_LANGUAGES = ('bn', 'ca', 'cs', 'de', 'en-CA', 'en-US', 'en-GB', 'es', 'hu', 'fr', 'it', 'ko',
                   'nl', 'pl', 'pt-BR', 'pt-PT', 'ro', 'ru', 'sk', 'sl', 'sq', 'sr',
                   'sv-SE', 'te', 'zh-TW', 'zh-CN', 'lt', 'ja', 'hsb', 'dsb', 'uk', 'kab',
                   'fy-NL',)
 DEV_LANGUAGES = PROD_LANGUAGES
-CANONICAL_LOCALES = {
-    'en': 'en-US',
-}
 
 EXEMPT_L10N_URLS = [
     '^/oidc/authenticate/',
@@ -160,12 +154,6 @@ EXEMPT_L10N_URLS = [
     '^/admin/',
     '^/beta/.*',
 ]
-
-# Tells the product_details module where to find our local JSON files.
-# This ultimately controls how LANGUAGES are constructed.
-PROD_DETAILS_DIR = Path(config('PROD_DETAILS_DIR', default='lib/product_details_json')).resolve()
-# List of RTL locales known to this project. Subset of LANGUAGES.
-RTL_LANGUAGES = ()  # ('ar', 'fa', 'fa-IR', 'he')
 
 
 def get_langs():
