@@ -1,9 +1,4 @@
-import sys
-
-import requests
-
 from django.conf import settings
-from nameparser import HumanName
 
 
 def absolutify(url):
@@ -21,9 +16,3 @@ def absolutify(url):
             site_url = ''.join(map(str, (protocol, hostname, ':', port)))
 
     return site_url + url
-
-
-def akismet_spam_check(user_ip, user_agent, **optional):
-    """Checks for spam content against Akismet API."""
-
-    return None

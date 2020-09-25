@@ -1,13 +1,12 @@
 import base64
 import hashlib
-import json
 import re
 
-from cities_light.models import Country
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.models import User
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+
 from mozillians.users.models import IdpProfile
 
 SSO_AAL_SCOPE = 'https://sso.mozilla.com/claim/AAL'
@@ -69,7 +68,7 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
         # Ensure compatibility with OIDC conformant mode
         auth0_user_id = claims.get('user_id') or claims.get('sub')
 
-        idp = IdpProfile.objects.create(
+        IdpProfile.objects.create(
             profile=user.userprofile,
             auth0_user_id=auth0_user_id,
             email=claims.get('email'),

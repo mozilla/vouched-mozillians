@@ -1,114 +1,18 @@
 import os.path
-from datetime import datetime
-
-from mock import patch
 
 from django.contrib.auth.models import User
 from django.contrib.auth.views import logout as logout_view
 from django.core.urlresolvers import reverse
 from django.test.client import Client
 from django.test.utils import override_script_prefix, override_settings
-from mozillians.common.tests import TestCase, requires_login, requires_vouch
-from mozillians.phonebook.models import Invite
-from mozillians.phonebook.tests import InviteFactory, _get_privacy_fields
+from mock import patch
+from nose.tools import eq_, ok_
+
+from mozillians.common.tests import TestCase, requires_login
+from mozillians.phonebook.tests import _get_privacy_fields
 from mozillians.users.managers import MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import UserProfilePrivacyModel
 from mozillians.users.tests import UserFactory
-from nose.tools import eq_, ok_
-
-
-class InviteTests(TestCase):
-    @requires_login()
-    def test_invite_anonymous(self):
-        client = Client()
-        client.get(reverse('phonebook:invite'), follow=True)
-
-    @requires_vouch()
-    def test_invite_unvouched(self):
-        user = UserFactory.create(vouched=False)
-        with self.login(user) as client:
-            client.get(reverse('phonebook:invite'), follow=True)
-
-    def test_invite_get_vouched(self):
-        user = UserFactory.create()
-        with self.login(user) as client:
-            response = client.get(reverse('phonebook:invite'), follow=True)
-        self.assertTemplateUsed(response, 'phonebook/invite.html')
-
-    @override_settings(CAN_VOUCH_THRESHOLD=1)
-    @patch('mozillians.phonebook.views.messages.success')
-    def test_invite_post_vouched(self, success_mock):
-        user = UserFactory.create()
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:invite')
-        data = {
-            'message': 'Join us foo!',
-            'recipient': 'foo@example.com',
-            'description': 'A test reason'
-        }
-        with self.login(user) as client:
-            response = client.post(url, data, follow=True)
-        self.assertTemplateUsed(response, 'phonebook/invite.html')
-        ok_(Invite.objects
-            .filter(recipient='foo@example.com', inviter=user.userprofile)
-            .exists())
-        ok_(success_mock.called)
-
-    @override_settings(CAN_VOUCH_THRESHOLD=1)
-    def test_invite_already_vouched(self):
-        vouched_user = UserFactory.create()
-        user = UserFactory.create()
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:invite')
-        data = {'recipient': vouched_user.email}
-        with self.login(user) as client:
-            response = client.post(url, data, follow=True)
-        self.assertTemplateUsed(response, 'phonebook/invite.html')
-        ok_('recipient' in response.context['invite_form'].errors)
-        eq_(Invite.objects.all().count(), 0)
-
-    def test_invite_delete(self):
-        user = UserFactory.create(userprofile={'is_vouched': True})
-        invite = InviteFactory.create(inviter=user.userprofile)
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:delete_invite', kwargs={'invite_pk': invite.pk})
-        with self.login(user) as client:
-            response = client.post(url, follow=True)
-
-        eq_(Invite.objects.all().count(), 0)
-        eq_(response.status_code, 200)
-
-    def test_invite_delete_invalid_requester(self):
-        user = UserFactory.create(userprofile={'is_vouched': True})
-        invite = InviteFactory.create(inviter=user.userprofile)
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:delete_invite', kwargs={'invite_pk': invite.pk})
-        invalid_requester = UserFactory.create(userprofile={'is_vouched': True})
-        with self.login(invalid_requester) as client:
-            response = client.post(url)
-
-        eq_(Invite.objects.all().count(), 1)
-        eq_(response.status_code, 404)
-
-    def test_invite_delete_redeemed(self):
-        user = UserFactory.create(userprofile={'is_vouched': True})
-        invite = InviteFactory.create(inviter=user.userprofile, redeemed=datetime.now())
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:delete_invite', kwargs={'invite_pk': invite.pk})
-        with self.login(user) as client:
-            response = client.post(url)
-
-        eq_(Invite.objects.all().count(), 1)
-        eq_(response.status_code, 404)
-
-    def test_invite_delete_invalid_invite(self):
-        user = UserFactory.create(userprofile={'is_vouched': True})
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:delete_invite', kwargs={'invite_pk': '1'})
-        with self.login(user) as client:
-            response = client.post(url)
-
-        eq_(response.status_code, 404)
 
 
 class VouchFormTests(TestCase):
@@ -357,7 +261,6 @@ class VouchTests(TestCase):
         ok_(not user.userprofile.is_vouched)
 
     def test_vouch(self):
-        Flag.objects.create(name='testing-autovouch-views', everyone=True)
         user = UserFactory.create(vouched=False)
         ok_(not user.userprofile.is_vouched)
         url = reverse('phonebook:profile_vouch', args=[user.username])
@@ -368,7 +271,6 @@ class VouchTests(TestCase):
         eq_(user.userprofile.vouches_received.all()[0].autovouch, True)
 
     def test_unvouch(self):
-        Flag.objects.create(name='testing-autovouch-views', everyone=True)
         user = UserFactory.create()
         ok_(user.userprofile.is_vouched)
         url = reverse('phonebook:profile_unvouch', args=[user.username])

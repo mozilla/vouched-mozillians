@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.shortcuts import render
 from django.utils.translation import activate
 from django.views.static import serve
+
 from mozillians.common.monkeypatches import patch
 
 # Funfactory monkeypatches customized to work with Django 1.7 admin
@@ -32,7 +33,6 @@ handler_csrf = lambda r, cb=None: error_page(r, 'csrf_error', status=400) # noqa
 
 urlpatterns = [
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
-    url(r'', include('mozillians.users.urls', app_name='users', namespace='users')),
     url(r'', include('mozillians.phonebook.urls', app_name='phonebook', namespace='phonebook')),
     # Admin URLs.
     url(r'^admin/', include(admin.site.urls)),

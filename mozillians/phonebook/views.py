@@ -1,38 +1,19 @@
-import json
-import logging
-from urllib import urlencode
-
-import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth.views import logout as auth_logout
-from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
-                         HttpResponseRedirect)
-from django.shortcuts import get_object_or_404, render
-from django.utils import timezone
-from django.utils.crypto import get_random_string
-from django.utils.encoding import force_bytes, smart_bytes
-from django.utils.safestring import mark_safe
+from django.http import Http404, HttpResponseRedirect
+from django.shortcuts import render
 from django.utils.translation import ugettext as _
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.views.generic import View
-from josepy.jwk import JWK
-from josepy.jws import JWS
-from mozilla_django_oidc.utils import absolutify, import_from_settings
-from mozilla_django_oidc.views import (OIDCAuthenticationRequestView,
-                                       get_next_url)
-from raven.contrib.django.models import client
 
 import mozillians.phonebook.forms as forms
 from mozillians.common.decorators import allow_public, allow_unvouched
 from mozillians.common.middleware import GET_VOUCHED_MESSAGE, LOGIN_MESSAGE
 from mozillians.common.templatetags.helpers import (get_object_or_none,
-                                                    nonprefixed_url, redirect,
-                                                    urlparams)
+                                                    redirect, urlparams)
 from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile

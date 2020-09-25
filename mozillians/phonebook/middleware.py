@@ -1,13 +1,8 @@
-import re
-
-from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.models import User
-from django.core.urlresolvers import is_valid_path, reverse
+from django.core.urlresolvers import is_valid_path
 from django.http import HttpResponseRedirect
-from django.utils.translation import ugettext as _
+
 from mozillians.common.middleware import safe_query_string
-from mozillians.common.templatetags.helpers import redirect
 
 
 class UsernameRedirectionMiddleware(object):

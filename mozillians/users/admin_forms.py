@@ -1,29 +1,8 @@
-from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
 from django.forms import ValidationError
-from mozillians.users.models import ExternalAccount, UserProfile, Vouch
 
-
-class VouchAutocompleteForm(forms.ModelForm):
-
-    class Meta:
-        model = Vouch
-        fields = '__all__'
-        widgets = {
-            'vouchee': autocomplete.ModelSelect2(url='users:vouchee-autocomplete'),
-            'voucher': autocomplete.ModelSelect2(url='users:voucher-autocomplete')
-        }
-
-
-class AlternateEmailForm(forms.ModelForm):
-    def save(self, *args, **kwargs):
-        self.instance.type = ExternalAccount.TYPE_EMAIL
-        return super(AlternateEmailForm, self).save(*args, **kwargs)
-
-    class Meta:
-        model = ExternalAccount
-        exclude = ['type']
+from mozillians.users.models import UserProfile
 
 
 class UserProfileAdminForm(forms.ModelForm):

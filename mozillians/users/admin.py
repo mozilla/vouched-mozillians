@@ -1,25 +1,18 @@
 from functools import update_wrapper
-from socket import error as socket_error
 
-from dal import autocomplete
 from django.conf import settings
-from django.conf.urls import url
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, User
 from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
-from django.http import HttpResponseRedirect
-from django.utils.html import format_html
 
 from mozillians.common.templatetags.helpers import get_datetime
-from mozillians.users.admin_forms import (AlternateEmailForm,
-                                          UserProfileAdminForm,
-                                          VouchAutocompleteForm)
-from mozillians.users.models import (PUBLIC, ExternalAccount, IdpProfile,
-                                     Language, UsernameBlacklist, UserProfile,
-                                     Vouch, get_languages_for_locale)
+from mozillians.users.admin_forms import UserProfileAdminForm
+from mozillians.users.models import (PUBLIC, IdpProfile, Language,
+                                     UsernameBlacklist, UserProfile, Vouch,
+                                     get_languages_for_locale)
 
 admin.site.unregister(Group)
 
@@ -129,49 +122,6 @@ class LastLoginFilter(SimpleListFilter):
         return queryset
 
 
-class AlternateEmailFilter(SimpleListFilter):
-    """Admin filter for users with alternate emails."""
-    title = 'alternate email'
-    parameter_name = 'alternate_email'
-
-    def lookups(self, request, model_admin):
-        return(('False', 'No'), ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset
-
-        if self.value() == 'True':
-            return queryset.filter(externalaccount__type=ExternalAccount.TYPE_EMAIL)
-
-        return queryset.exclude(externalaccount__type=ExternalAccount.TYPE_EMAIL)
-
-
-class LegacyVouchFilter(SimpleListFilter):
-    """Admin filter for profiles with new or legacy vouch type."""
-    title = 'vouch type'
-    parameter_name = 'vouch_type'
-
-    def lookups(self, request, model_admin):
-        return (('legacy', 'Legacy'),
-                ('new', 'New'))
-
-    def queryset(self, request, queryset):
-        vouched = queryset.filter(is_vouched=True)
-        newvouches = (Vouch.objects
-                      .exclude(description='')
-                      .values_list('vouchee', flat=True)
-                      .distinct())
-        # Load into memory
-        newvouches = list(newvouches)
-
-        if self.value() == 'legacy':
-            return vouched.exclude(pk__in=newvouches)
-        elif self.value() == 'new':
-            return vouched.filter(pk__in=newvouches)
-        return queryset
-
-
 class UsernameBlacklistAdmin(admin.ModelAdmin):
     """UsernameBlacklist Admin."""
     save_on_top = True
@@ -227,39 +177,14 @@ class LanguageInline(admin.TabularInline):
     extra = 1
 
 
-class ExternalAccountInline(admin.TabularInline):
-    model = ExternalAccount
-    extra = 1
-
-    def queryset(self, request):
-        """Exclude alternate emails from external accounts"""
-        qs = super(ExternalAccountInline, self).queryset(request)
-        return qs.exclude(type=ExternalAccount.TYPE_EMAIL)
-
-
-class AlternateEmailInline(admin.TabularInline):
-    form = AlternateEmailForm
-    model = ExternalAccount
-    extra = 1
-    verbose_name = 'Alternate Email'
-    verbose_name_plural = 'Alternate Emails'
-
-    def queryset(self, request):
-        """Limit queryset to alternate emails."""
-        qs = super(AlternateEmailInline, self).queryset(request)
-        return qs.filter(type=ExternalAccount.TYPE_EMAIL)
-
-
 class UserProfileAdmin(admin.ModelAdmin):
-    inlines = [LanguageInline, ExternalAccountInline,
-               AlternateEmailInline]
+    inlines = [LanguageInline]
     search_fields = ['full_name', 'user__email', 'user__username', 'is_staff']
     readonly_fields = ['date_vouched', 'vouched_by', 'user', 'date_joined', 'last_login',
                        'is_vouched', 'can_vouch']
     form = UserProfileAdminForm
     list_filter = ['is_vouched', 'can_vouch', DateJoinedFilter,
-                   LastLoginFilter, LegacyVouchFilter, SuperUserFilter,
-                   PublicProfileFilter, AlternateEmailFilter,
+                   LastLoginFilter, SuperUserFilter, PublicProfileFilter,
                    'externalaccount__type']
     save_on_top = True
     list_display = ['full_name', 'email', 'username', 'is_vouched', 'can_vouch',
@@ -282,7 +207,8 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('date_vouched', 'is_vouched', 'can_vouch')
         }),
         ('Privacy Settings', {
-            'fields': ('privacy_full_name', 'privacy_email', 'privacy_languages', 'privacy_data_mozillians',),
+            'fields': ('privacy_full_name', 'privacy_email',
+                       'privacy_languages', 'privacy_data_mozillians',),
             'classes': ('collapse',)
         }),
     )
@@ -364,21 +290,9 @@ class VouchAdmin(admin.ModelAdmin):
                      'voucher__user__email', 'vouchee__user__email', 'description']
     list_display = ['vouchee', 'voucher', 'date', 'autovouch']
     list_filter = ['autovouch']
-    form = VouchAutocompleteForm
 
 
 admin.site.register(Vouch, VouchAdmin)
-
-
-class ExternalAccountAdmin(admin.ModelAdmin):
-    list_display = ['type', 'user', 'identifier']
-    list_filter = ['type']
-
-    class Meta:
-        model = ExternalAccount
-
-
-admin.site.register(ExternalAccount, ExternalAccountAdmin)
 
 
 class IdpProfileAdmin(admin.ModelAdmin):
