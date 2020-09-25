@@ -19,9 +19,6 @@ COPY requirements /code/requirements/
 RUN pip install --require-hashes --no-deps -r requirements/prod.txt
 COPY . /code
 
-RUN git clone -b production --depth 1 https://github.com/mozilla-l10n/mozillians-l10n.git /code/locale && \
-    cd /code/locale && ./compile.sh
-
 RUN chown webdev.webdev -R .
 USER webdev
 RUN bin/bootstrap.sh

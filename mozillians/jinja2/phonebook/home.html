@@ -100,15 +100,6 @@
             {{ user.userprofile.email }}
             {% with profile = user.userprofile %}
             {% endwith %}
-            {% if user.userprofile.languages.exists() %}
-              <section class="languages">
-                <h4>{{ _('Languages') }}</h4>
-                {% for language in user.userprofile.languages %}
-                  {{ langcode_to_name(language.code) }}
-                  {%- if not loop.last -%},{% endif %}
-                {% endfor %}
-              </section>
-            {% endif %}
            </div>
         </article>
       </div>

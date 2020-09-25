@@ -41,39 +41,19 @@ class LocaleURLMiddleware(object):
 
     def __init__(self, get_response):
         self.get_response = get_response
-        if not settings.USE_I18N or not settings.USE_L10N:
-            warn("USE_I18N or USE_L10N is False but LocaleURLMiddleware is "
-                 "loaded. Consider removing funfactory.middleware."
-                 "LocaleURLMiddleware from your MIDDLEWARE_CLASSES setting.")
-
-    def _is_lang_change(self, request):
-        """Return True if the lang param is present and URL isn't exempt."""
-        if 'lang' not in request.GET:
-            return False
-        return True
 
     def __call__(self, request):
 
-        # Don't apply middleware to requests matching exempt URLs
-        # Use default LANGUAGE_CODE locale
+        request.locale = settings.LANGUAGE_CODE
+        activate(settings.LANGUAGE_CODE)
+
         for view_url in settings.EXEMPT_L10N_URLS:
             if re.search(view_url, request.path):
-                request.locale = settings.LANGUAGE_CODE
-                activate(settings.LANGUAGE_CODE)
                 return self.get_response(request)
 
         prefixer = urlresolvers.Prefixer(request)
         urlresolvers.set_url_prefix(prefixer)
         full_path = prefixer.fix(prefixer.shortened_path)
-
-        if self._is_lang_change(request):
-            # Blank out the locale so that we can set a new one. Remove lang
-            # from the query params so we don't have an infinite loop.
-            prefixer.locale = ''
-            new_path = prefixer.fix(prefixer.shortened_path)
-            query = dict((smart_str(k), request.GET[k]) for k in request.GET)
-            query.pop('lang')
-            return HttpResponsePermanentRedirect(urlparams(new_path, **query))
 
         if full_path != request.path:
             query_string = request.META.get('QUERY_STRING', '')

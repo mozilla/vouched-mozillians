@@ -1,5 +1,4 @@
 # See base_env_vars for details about these settings
-PROD_DETAILS_DIR = 'lib/product_details_json'
 DOMAIN = 'localhost'
 PROTOCOL = 'http://'
 COMPRESS_ENABLED = False

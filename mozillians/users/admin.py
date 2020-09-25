@@ -10,9 +10,8 @@ from django.db.models import Count, Q
 
 from mozillians.common.templatetags.helpers import get_datetime
 from mozillians.users.admin_forms import UserProfileAdminForm
-from mozillians.users.models import (PUBLIC, IdpProfile, Language,
-                                     UsernameBlacklist, UserProfile, Vouch,
-                                     get_languages_for_locale)
+from mozillians.users.models import (PUBLIC, IdpProfile,
+                                     UsernameBlacklist, UserProfile, Vouch)
 
 admin.site.unregister(Group)
 
@@ -133,52 +132,7 @@ class UsernameBlacklistAdmin(admin.ModelAdmin):
 admin.site.register(UsernameBlacklist, UsernameBlacklistAdmin)
 
 
-class MissingLanguagesFilter(SimpleListFilter):
-    title = 'Missing language'
-    parameter_name = 'missing_language'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'No'),
-                ('True', 'Yes'))
-
-    def queryset(self, request, queryset):
-        current_language_codes = set(Language.objects.values_list('code', flat=True))
-        babel_language_codes = set([code for code, lang in get_languages_for_locale('en')])
-
-        if self.value() == 'True':
-            missing_language_codes = current_language_codes.difference(babel_language_codes)
-            return queryset.filter(code__in=list(missing_language_codes))
-
-        if self.value() == 'False':
-            return queryset.filter(code__in=list(babel_language_codes))
-
-        return queryset
-
-
-class LanguageAdmin(admin.ModelAdmin):
-    search_fields = ['userprofile__full_name', 'userprofile__user__email', 'code']
-    list_display = ['get_code', 'get_language_name', 'userprofile']
-    list_filter = ['code', MissingLanguagesFilter]
-
-    def get_code(self, obj):
-        return obj.code
-    get_code.short_description = 'Code'
-
-    def get_language_name(self, obj):
-        return obj.get_code_display()
-    get_language_name.short_description = 'Name'
-
-
-admin.site.register(Language, LanguageAdmin)
-
-
-class LanguageInline(admin.TabularInline):
-    model = Language
-    extra = 1
-
-
 class UserProfileAdmin(admin.ModelAdmin):
-    inlines = [LanguageInline]
     search_fields = ['full_name', 'user__email', 'user__username', 'is_staff']
     readonly_fields = ['date_vouched', 'vouched_by', 'user', 'date_joined', 'last_login',
                        'is_vouched', 'can_vouch']
@@ -207,8 +161,7 @@ class UserProfileAdmin(admin.ModelAdmin):
             'fields': ('date_vouched', 'is_vouched', 'can_vouch')
         }),
         ('Privacy Settings', {
-            'fields': ('privacy_full_name', 'privacy_email',
-                       'privacy_languages', 'privacy_data_mozillians',),
+            'fields': ('privacy_full_name', 'privacy_email', 'privacy_data_mozillians',),
             'classes': ('collapse',)
         }),
     )

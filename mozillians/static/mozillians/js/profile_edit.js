@@ -119,11 +119,6 @@ $(function() {
         return false;
     });
 
-    $('#languages-addfield').click(function() {
-        cloneFormsetField('div#languages > div:last', 'language_set');
-        return false;
-    });
-
     $('.tshirt-info').on({
         "touchstart mouseenter":function(event) {
             event.preventDefault();
