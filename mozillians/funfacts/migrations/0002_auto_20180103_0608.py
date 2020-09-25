@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import mozillians.funfacts.models
 
 
 class Migration(migrations.Migration):
@@ -19,6 +18,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='funfact',
             name='number',
-            field=models.TextField(default=b'', max_length=1000, blank=True, validators=[mozillians.funfacts.models._validate_query]),
+            field=models.TextField(default=b'', max_length=1000, blank=True),
         ),
     ]
