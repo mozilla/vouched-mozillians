@@ -1,11 +1,8 @@
 import re
-from cStringIO import StringIO
 from datetime import datetime
 
-from pytz import common_timezones
-
-import django_filters
 import happyforms
+from cStringIO import StringIO
 from dal import autocomplete
 from django import forms
 from django.contrib.auth.models import User
@@ -14,16 +11,14 @@ from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import RadioSelect
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
+
 from mozillians.common.urlresolvers import reverse
-from mozillians.phonebook.models import Invite
 from mozillians.phonebook.validators import validate_username
 from mozillians.phonebook.widgets import MonthYearWidget
 from mozillians.users import get_languages_for_locale
 from mozillians.users.managers import PUBLIC
 from mozillians.users.models import (ExternalAccount, IdpProfile, Language,
                                      UserProfile)
-from nocaptcha_recaptcha.fields import NoReCaptchaField
-from PIL import Image
 
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
 
@@ -81,38 +76,6 @@ class EmailPrivacyForm(happyforms.ModelForm):
         fields = ['privacy_email']
 
 
-def filter_vouched(qs, choice):
-    if choice == SearchFilter.CHOICE_ONLY_VOUCHED:
-        return qs.filter(is_vouched=True)
-    elif choice == SearchFilter.CHOICE_ONLY_UNVOUCHED:
-        return qs.filter(is_vouched=False)
-    return qs
-
-
-class SearchFilter(django_filters.FilterSet):
-    CHOICE_ONLY_VOUCHED = 'yes'
-    CHOICE_ONLY_UNVOUCHED = 'no'
-    CHOICE_ALL = 'all'
-
-    CHOICES = (
-        (CHOICE_ONLY_VOUCHED, _lazy('Vouched')),
-        (CHOICE_ONLY_UNVOUCHED, _lazy('Unvouched')),
-        (CHOICE_ALL, _lazy('All')),
-    )
-
-    vouched = django_filters.ChoiceFilter(
-        name='vouched', label=_lazy(u'Display only'), required=False,
-        choices=CHOICES, action=filter_vouched)
-
-    class Meta:
-        model = UserProfile
-        fields = ['vouched', 'timezone']
-
-    def __init__(self, *args, **kwargs):
-        super(SearchFilter, self).__init__(*args, **kwargs)
-        self.filters['timezone'].field.choices.insert(0, ('', _lazy(u'All timezones')))
-
-
 class UserForm(happyforms.ModelForm):
     """Instead of just inhereting form a UserProfile model form, this
     base class allows us to also abstract over methods that have to do
@@ -151,116 +114,11 @@ class UserForm(happyforms.ModelForm):
 
 
 class BasicInformationForm(happyforms.ModelForm):
-    photo = forms.ImageField(label=_lazy(u'Profile Photo'), required=False)
-    photo_delete = forms.BooleanField(label=_lazy(u'Remove Profile Photo'),
-                                      required=False)
 
     class Meta:
         model = UserProfile
-        fields = ('photo', 'privacy_photo', 'full_name', 'privacy_full_name',
-                  'bio', 'privacy_bio',)
+        fields = ('full_name', 'privacy_full_name',)
         widgets = {'bio': forms.Textarea()}
-
-    def clean_photo(self):
-        """Clean possible bad Image data.
-
-        Try to load EXIF data from image. If that fails, remove EXIF
-        data by re-saving the image. Related bug 919736.
-
-        """
-        photo = self.cleaned_data['photo']
-        if photo and isinstance(photo, UploadedFile):
-            image = Image.open(photo.file)
-            try:
-                image._get_exif()
-            except (AttributeError, IOError, KeyError, IndexError):
-                cleaned_photo = StringIO()
-                if image.mode != 'RGB':
-                    image = image.convert('RGB')
-                image.save(cleaned_photo, format='JPEG', quality=95)
-                photo.file = cleaned_photo
-                photo.size = cleaned_photo.tell()
-        return photo
-
-
-def get_timezones_list():
-    return common_timezones
-
-
-class LocationForm(happyforms.ModelForm):
-    """Form to provide location data."""
-
-    timezone = autocomplete.Select2ListChoiceField(
-        choice_list=get_timezones_list,
-        required=False,
-        widget=autocomplete.ListSelect2(url='users:timezone-autocomplete',
-                                        forward=['country', 'city', 'region']))
-
-    def __init__(self, *args, **kwargs):
-        """Override init method.
-
-        Make country a required field.
-        """
-        super(LocationForm, self).__init__(*args, **kwargs)
-        self.fields['country'].required = True
-        if self.data and (self.data.get('city') or self.data.get('country')):
-            self.fields['country'].required = False
-
-    def clean(self):
-        """Override clean method.
-
-        We need at least the country of the user.
-        If a user supplies a city or a region, we can extract
-        the data from there.
-        """
-        super(LocationForm, self).clean()
-
-        country = self.cleaned_data.get('country')
-        region = self.cleaned_data.get('region')
-        city = self.cleaned_data.get('city')
-
-        if not city and not country and not region:
-            msg = _(u'Please supply your location data.')
-            raise forms.ValidationError(msg)
-
-        if region:
-            self.cleaned_data['country'] = region.country
-
-        if city:
-            self.cleaned_data['country'] = city.country
-            self.cleaned_data['region'] = city.region
-
-        return self.cleaned_data
-
-    class Meta:
-        model = UserProfile
-        fields = ('timezone', 'privacy_timezone', 'city', 'privacy_city', 'region',
-                  'privacy_region', 'country', 'privacy_country',)
-        widgets = {
-            'country': autocomplete.ModelSelect2(
-                url='users:country-autocomplete',
-                attrs={
-                    'data-placeholder': u'Start typing to select a country.',
-                    'data-minimum-input-length': 2
-                }
-            ),
-            'region': autocomplete.ModelSelect2(
-                url='users:region-autocomplete',
-                forward=['country'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a region.',
-                    'data-minimum-input-length': 3
-                }
-            ),
-            'city': autocomplete.ModelSelect2(
-                url='users:city-autocomplete',
-                forward=['country', 'region'],
-                attrs={
-                    'data-placeholder': u'Start typing to select a city.',
-                    'data-minimum-input-length': 3
-                }
-            )
-        }
 
 
 class ContributionForm(happyforms.ModelForm):
@@ -272,8 +130,7 @@ class ContributionForm(happyforms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ('title', 'privacy_title', 'date_mozillian', 'privacy_date_mozillian',
-                  'story_link', 'privacy_story_link',)
+        fields = ('date_mozillian', 'privacy_date_mozillian',)
 
 
 class BaseLanguageFormSet(BaseInlineFormSet):

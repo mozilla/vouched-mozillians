@@ -4,13 +4,13 @@
 import json
 import os.path
 import sys
-from urlparse import urljoin
 
 from decouple import Csv, config
 from dj_database_url import parse as db_url
 from django.utils.functional import lazy
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 from unipath import Path
+from urlparse import urljoin
 
 PROJECT_MODULE = 'mozillians'
 # Root path of the project
@@ -67,8 +67,6 @@ INSTALLED_APPS = (
     'mozillians.geo',
 
     'sorl.thumbnail',
-    'rest_framework',
-    'django_filters',
     'raven.contrib.django.raven_compat',
 )
 
@@ -209,29 +207,6 @@ SUPPORTED_NONLOCALES = [
     'humans.txt'
 ]
 
-# Email
-SERVER_EMAIL = config('SERVER_EMAIL', default='prod@mozillians.org')
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-FROM_NOREPLY = config('FROM_NOREPLY', default='Mozillians.org <no-reply@mozillians.org>')
-FROM_NOREPLY_VIA = config('FROM_NOREPLY_VIA',
-                          default='%s via Mozillians.org <noreply@mozillians.org>')
-
-if EMAIL_BACKEND == 'django_ses.SESBackend':
-    if config('AWS_SES_OVERRIDE_BOTO', default=False, cast=bool):
-        AWS_SES_ACCESS_KEY_ID = config('AWS_SES_ACCESS_KEY_ID')
-        AWS_SES_SECRET_ACCESS_KEY = config('AWS_SES_SECRET_ACCESS_KEY')
-    AWS_SES_REGION_NAME = config('AWS_SES_REGION_NAME',
-                                 default='us-east-1')
-    AWS_SES_REGION_ENDPOINT = config('AWS_SES_REGION_ENDPOINT',
-                                     default='email.us-east-1.amazonaws.com')
-else:
-    EMAIL_HOST = config('SMTP_EMAIL_HOST', default='localhost')
-    EMAIL_PORT = config('SMTP_EMAIL_PORT', default='1025')
-    EMAIL_HOST_USER = config('SMTP_EMAIL_HOST_USER', default='')
-    EMAIL_HOST_PASSWORD = config('SMTP_EMAIL_HOST_PASSWORD', default='')
-
-EMAIL_USE_TLS = config('SMTP_EMAIL_USE_TLS', default=False, cast=bool)
-
 # Cache
 CACHES = {
     'default': {
@@ -239,12 +214,6 @@ CACHES = {
         'LOCATION': config('CACHE_URL', default='127.0.0.1:11211'),
     }
 }
-
-# NDA Group
-NDA_GROUP = config('NDA_GROUP', default='nda')
-# TODO change this
-NDA_STAFF_GROUP = config('NDA_STAFF_GROUP', default='contingentworkernda')
-NDA_ACCESS_GROUPS = [NDA_GROUP, NDA_STAFF_GROUP]
 
 # Google Analytics
 GA_ACCOUNT_CODE = config('GA_ACCOUNT_CODE', default='UA-35433268-19')
@@ -265,13 +234,6 @@ MOZSPACE_PHOTO_DIR = config('MOZSPACE_PHOTO_DIR', default='uploads/mozspaces')
 
 # Announcements
 ANNOUNCEMENTS_PHOTO_DIR = config('ANNOUNCEMENTS_PHOTO_DIR', default='uploads/announcements')
-
-# S3 Export
-ADMIN_EXPORT_MIXIN = config('ADMIN_EXPORT_MIXIN', default='mozillians.common.mixins.S3ExportMixin')
-MOZILLIANS_ADMIN_BUCKET = config('MOZILLIANS_ADMIN_BUCKET', default='')
-
-# Akismet
-AKISMET_API_KEY = config('AKISMET_API_KEY', default='')
 
 MESSAGE_STORAGE = config('MESSAGE_STORAGE',
                          default='django.contrib.messages.storage.session.SessionStorage')
@@ -320,16 +282,8 @@ USERNAME_MAX_LENGTH = config('USERNAME_MAX_LENGTH', default=30, cast=int)
 LOGIN_URL = config('LOGIN_URL', default='/')
 LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/login/')
 
-# Tests
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
 # django-mobility
 MOBILE_COOKIE = config('MOBILE_COOKIE', default='mobile')
-
-# Recaptcha
-NORECAPTCHA_SITE_KEY = config('NORECAPTCHA_SITE_KEY', default='site_key')
-NORECAPTCHA_SECRET_KEY = config('NORECAPTCHA_SECRET_KEY', default='secret_key')
-
 
 # Django OIDC
 def _username_algo(email):
@@ -529,7 +483,6 @@ MAX_PHOTO_UPLOAD_SIZE = 8 * (1024 ** 2)
 # Django-CSP
 CSP_REPORT_ONLY = config('CSP_REPORT_ONLY', default=False, cast=bool)
 CSP_REPORT_ENABLE = config('CSP_REPORT_ENABLE', default=True, cast=bool)
-CSP_REPORT_URI = config('CSP_REPORT_URI', default='/en-US/capture-csp-violation')
 CSP_DEFAULT_SRC = (
     "'self'",
     'https://cdn.mozillians.org',
@@ -601,19 +554,6 @@ STRONGHOLD_EXCEPTIONS = ['^%s' % MEDIA_URL, # noqa
                          '^/[\w-]+/city-autocomplete/',
                          '^/[\w-]+/region-autocomplete/',
                          '^/[\w-]+/timezone-autocomplete/']
-
-REST_FRAMEWORK = {
-    'URL_FIELD_NAME': '_url',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 30,
-    'DEFAULT_PERMISSION_CLASSES': (
-        'mozillians.api.v2.permissions.MozilliansPermission',
-    ),
-    'DEFAULT_FILTER_BACKENDS': (
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter',
-    ),
-}
 
 if DEV:
     CSP_FONT_SRC += (

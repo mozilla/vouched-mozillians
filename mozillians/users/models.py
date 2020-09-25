@@ -3,8 +3,6 @@ import os
 import uuid
 from itertools import chain
 
-from pytz import common_timezones
-
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
@@ -17,6 +15,11 @@ from django.utils.http import urlquote
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
+from PIL import Image
+from product_details import product_details
+from pytz import common_timezones
+from sorl.thumbnail import ImageField, get_thumbnail
+
 from mozillians.common import utils
 from mozillians.common.templatetags.helpers import (absolutify, gravatar,
                                                     offset_of_timezone)
@@ -32,9 +35,6 @@ from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
                                        PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,
                                        PUBLIC, PUBLIC_INDEXABLE_FIELDS,
                                        UserProfileQuerySet)
-from PIL import Image
-from product_details import product_details
-from sorl.thumbnail import ImageField, get_thumbnail
 
 COUNTRIES = product_details.get_regions('en-US')
 AVATAR_SIZE = (300, 300)
@@ -59,22 +59,12 @@ class PrivacyField(models.PositiveSmallIntegerField):
 class UserProfilePrivacyModel(models.Model):
     _privacy_level = None
 
-    privacy_photo = PrivacyField()
     privacy_full_name = PrivacyField()
     privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE,
                                  default=MOZILLIANS)
-    privacy_bio = PrivacyField()
-    privacy_geo_city = PrivacyField()
-    privacy_geo_region = PrivacyField()
-    privacy_geo_country = PrivacyField()
-    privacy_city = PrivacyField()
-    privacy_region = PrivacyField()
-    privacy_country = PrivacyField()
     privacy_languages = PrivacyField()
     privacy_date_mozillian = PrivacyField()
-    privacy_timezone = PrivacyField()
     privacy_title = PrivacyField()
-    privacy_story_link = PrivacyField()
 
     CACHED_PRIVACY_FIELDS = None
 
@@ -143,39 +133,9 @@ class UserProfile(UserProfilePrivacyModel):
         default=False,
         help_text='You can edit can_vouch status by editing invidual vouches')
     last_updated = models.DateTimeField(auto_now=True)
-    bio = models.TextField(verbose_name=_lazy(u'Bio'), default='', blank=True)
-    photo = ImageField(default='', blank=True, upload_to=_calculate_photo_filename)
-
-    # validated geo data (validated that it's valid geo data, not that the
-    # mozillian is there :-) )
-    geo_country = models.ForeignKey('geo.Country', blank=True, null=True,
-                                    on_delete=models.SET_NULL)
-    geo_region = models.ForeignKey('geo.Region', blank=True, null=True, on_delete=models.SET_NULL)
-    geo_city = models.ForeignKey('geo.City', blank=True, null=True, on_delete=models.SET_NULL)
-    lat = models.FloatField(_lazy(u'Latitude'), blank=True, null=True)
-    lng = models.FloatField(_lazy(u'Longitude'), blank=True, null=True)
-
-    # django-cities-light fields
-    city = models.ForeignKey('cities_light.City', blank=True, null=True,
-                             on_delete=models.SET_NULL)
-    region = models.ForeignKey('cities_light.Region', blank=True, null=True,
-                               on_delete=models.SET_NULL)
-    country = models.ForeignKey('cities_light.Country', blank=True, null=True,
-                                on_delete=models.SET_NULL)
 
     date_mozillian = models.DateField('When was involved with Mozilla',
                                       null=True, blank=True, default=None)
-    timezone = models.CharField(max_length=100, blank=True, default='',
-                                choices=zip(common_timezones, common_timezones))
-    title = models.CharField(_lazy(u'What do you do for Mozilla?'),
-                             max_length=70, blank=True, default='')
-
-    story_link = models.URLField(
-        _lazy(u'Link to your contribution story'),
-        help_text=_lazy(u'If you have created something public that '
-                        u'tells the story of how you came to be a '
-                        u'Mozillian, specify that link here.'),
-        max_length=1024, blank=True, default='')
     # This is the Auth0 user ID. We are saving only the primary here.
     auth0_user_id = models.CharField(max_length=1024, default='', blank=True)
     is_staff = models.BooleanField(default=False)
@@ -217,7 +177,6 @@ class UserProfile(UserProfilePrivacyModel):
             'vouches_made': '_vouches_made',
             'vouches_received': '_vouches_received',
             'vouched_by': '_vouched_by',
-            'websites': '_websites',
             'identity_profiles': '_identity_profiles'
         }
 
@@ -340,12 +299,6 @@ class UserProfile(UserProfilePrivacyModel):
         return _getattr('vouches_received')
 
     @property
-    def _websites(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
-        accounts = _getattr('externalaccount_set').filter(type=ExternalAccount.TYPE_WEBSITE)
-        return self._filter_accounts_privacy(accounts)
-
-    @property
     def display_name(self):
         return self.full_name
 
@@ -401,43 +354,6 @@ class UserProfile(UserProfilePrivacyModel):
         if save:
             self.save()
 
-    def get_photo_thumbnail(self, geometry='160x160', **kwargs):
-        if 'crop' not in kwargs:
-            kwargs['crop'] = 'center'
-
-        if self.photo and default_storage.exists(self.photo.name):
-            # Workaround for legacy images in RGBA model
-
-            try:
-                image_obj = Image.open(self.photo)
-            except IOError:
-                return get_thumbnail(settings.DEFAULT_AVATAR_PATH, geometry, **kwargs)
-
-            if image_obj.mode == 'RGBA':
-                new_fh = default_storage.open(self.photo.name, 'w')
-                converted_image_obj = image_obj.convert('RGB')
-                converted_image_obj.save(new_fh, 'JPEG')
-                new_fh.close()
-
-            return get_thumbnail(self.photo, geometry, **kwargs)
-        return get_thumbnail(settings.DEFAULT_AVATAR_PATH.format(), geometry, **kwargs)
-
-    def get_photo_url(self, geometry='160x160', **kwargs):
-        """Return photo url.
-
-        If privacy allows and no photo set, return gravatar link.
-        If privacy allows and photo set return local photo link.
-        If privacy doesn't allow return default local link.
-        """
-        privacy_level = getattr(self, '_privacy_level', MOZILLIANS)
-        if (not self.photo and self.privacy_photo >= privacy_level):
-            return gravatar(self.email, size=geometry)
-
-        photo_url = self.get_photo_thumbnail(geometry, **kwargs).url
-        if photo_url.startswith('https://') or photo_url.startswith('http://'):
-            return photo_url
-        return absolutify(photo_url)
-
     def is_vouchable(self, voucher):
         """Check whether self can receive a vouch from voucher."""
         # If there's a voucher, they must be able to vouch.
@@ -454,16 +370,6 @@ class UserProfile(UserProfilePrivacyModel):
             return False
 
         return True
-
-
-    def timezone_offset(self):
-        """
-        Return minutes the user's timezone is offset from UTC.  E.g. if user is
-        4 hours behind UTC, returns -240.
-        If user has not set a timezone, returns None (not 0).
-        """
-        if self.timezone:
-            return offset_of_timezone(self.timezone)
 
     def save(self, *args, **kwargs):
         self._privacy_level = None
@@ -596,34 +502,7 @@ class UsernameBlacklist(models.Model):
 
 class ExternalAccount(models.Model):
     # Constants for type field values.
-    TYPE_AMO = 'AMO'
-    TYPE_BMO = 'BMO'
     TYPE_EMAIL = 'EMAIL'
-    TYPE_MDN = 'MDN'
-    TYPE_SUMO = 'SUMO'
-    TYPE_FACEBOOK = 'FACEBOOK'
-    TYPE_TWITTER = 'TWITTER'
-    TYPE_AIM = 'AIM'
-    TYPE_SKYPE = 'SKYPE'
-    TYPE_YAHOO = 'YAHOO'
-    TYPE_WEBSITE = 'WEBSITE'
-    TYPE_BITBUCKET = 'BITBUCKET'
-    TYPE_SLIDESHARE = 'SLIDESHARE'
-    TYPE_WEBMAKER = 'WEBMAKER'
-    TYPE_MOWIKI = 'MOZILLAWIKI'
-    TYPE_REMO = 'REMO'
-    TYPE_LINKEDIN = 'LINKEDIN'
-    TYPE_JABBER = 'JABBER'
-    TYPE_DISCOURSE = 'DISCOURSE'
-    TYPE_LANYRD = 'LANYRD'
-    TYPE_LANDLINE = 'Phone (Landline)'
-    TYPE_MOBILE = 'Phone (Mobile)'
-    TYPE_MOPONTOON = 'MOZILLAPONTOON'
-    TYPE_TRANSIFEX = 'TRANSIFEX'
-    TYPE_TELEGRAM = 'TELEGRAM'
-    TYPE_MASTODON = 'MASTODON'
-    TYPE_DISCORD = 'DISCORD'
-    TYPE_MOZPHAB = 'MOZPHAB'
 
     # Account type field documentation:
     # name: The name of the service that this account belongs to. What
@@ -636,82 +515,9 @@ class ExternalAccount(models.Model):
     #            user's entry. Function should return the cleaned
     #            data.
     ACCOUNT_TYPES = {
-        TYPE_AMO: {'name': 'Mozilla Add-ons',
-                   'url': 'https://addons.mozilla.org/user/{identifier}/',
-                   'validator': validate_username_not_url},
-        TYPE_BMO: {'name': 'Bugzilla (BMO)',
-                   'url': 'https://bugzilla.mozilla.org/user_profile?login={identifier}',
-                   'validator': validate_username_not_url},
         TYPE_EMAIL: {'name': 'Alternate email address',
                      'url': '',
-                     'validator': validate_email},
-        TYPE_BITBUCKET: {'name': 'Bitbucket',
-                         'url': 'https://bitbucket.org/{identifier}',
-                         'validator': validate_username_not_url},
-        TYPE_MDN: {'name': 'MDN',
-                   'url': 'https://developer.mozilla.org/profiles/{identifier}',
-                   'validator': validate_username_not_url},
-        TYPE_SUMO: {'name': 'Mozilla Support',
-                    'url': 'https://support.mozilla.org/user/{identifier}',
-                    'validator': validate_username_not_url},
-        TYPE_FACEBOOK: {'name': 'Facebook',
-                        'url': 'https://www.facebook.com/{identifier}',
-                        'validator': validate_username_not_url},
-        TYPE_TWITTER: {'name': 'Twitter',
-                       'url': 'https://twitter.com/{identifier}',
-                       'validator': validate_twitter},
-        TYPE_AIM: {'name': 'AIM', 'url': ''},
-        TYPE_SKYPE: {'name': 'Skype', 'url': ''},
-        TYPE_SLIDESHARE: {'name': 'SlideShare',
-                          'url': 'http://www.slideshare.net/{identifier}',
-                          'validator': validate_username_not_url},
-        TYPE_YAHOO: {'name': 'Yahoo! Messenger', 'url': ''},
-        TYPE_WEBSITE: {'name': 'Website URL',
-                       'url': '',
-                       'validator': validate_website},
-        TYPE_WEBMAKER: {'name': 'Mozilla Webmaker',
-                        'url': 'https://{identifier}.makes.org',
-                        'validator': validate_username_not_url},
-        TYPE_MOWIKI: {'name': 'Mozilla Wiki', 'url': 'https://wiki.mozilla.org/User:{identifier}',
-                      'validator': validate_username_not_url},
-        TYPE_REMO: {'name': 'Mozilla Reps', 'url': 'https://reps.mozilla.org/u/{identifier}/',
-                    'validator': validate_username_not_url},
-        TYPE_LINKEDIN: {'name': 'LinkedIn',
-                        'url': 'https://www.linkedin.com/in/{identifier}/',
-                        'validator': validate_linkedin},
-        TYPE_JABBER: {'name': 'XMPP/Jabber',
-                      'url': '',
-                      'validator': validate_email},
-        TYPE_MASTODON: {'name': 'Mastodon',
-                        'url': '',
-                        'validator': validate_email},
-        TYPE_DISCOURSE: {'name': 'Mozilla Discourse',
-                         'url': 'https://discourse.mozilla.org/users/{identifier}',
-                         'validator': validate_username_not_url},
-        TYPE_LANYRD: {'name': 'Lanyrd',
-                      'url': 'http://lanyrd.com/profile/{identifier}/',
-                      'validator': validate_username_not_url},
-        TYPE_LANDLINE: {'name': 'Phone (Landline)',
-                        'url': '',
-                        'validator': validate_phone_number},
-        TYPE_MOBILE: {'name': 'Phone (Mobile)',
-                      'url': '',
-                      'validator': validate_phone_number},
-        TYPE_MOPONTOON: {'name': 'Mozilla Pontoon',
-                         'url': 'https://pontoon.mozilla.org/contributor/{identifier}/',
-                         'validator': validate_email},
-        TYPE_TRANSIFEX: {'name': 'Transifex',
-                         'url': 'https://www.transifex.com/accounts/profile/{identifier}/',
-                         'validator': validate_username_not_url},
-        TYPE_TELEGRAM: {'name': 'Telegram',
-                        'url': 'https://telegram.me/{identifier}',
-                        'validator': validate_username_not_url},
-        TYPE_DISCORD: {'name': 'Discord',
-                       'url': '',
-                       'validator': validate_discord},
-        TYPE_MOZPHAB: {'name': 'Mozilla Phabricator',
-                       'url': 'https://phabricator.services.mozilla.com/p/{identifier}/',
-                       'validator': validate_username_not_url},
+                     'validator': validate_email}
     }
 
     user = models.ForeignKey(UserProfile)

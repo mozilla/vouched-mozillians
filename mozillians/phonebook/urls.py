@@ -1,6 +1,7 @@
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
+
 from mozillians.common.decorators import allow_public, allow_unvouched
 from mozillians.phonebook import views as phonebook_views
 
@@ -14,9 +15,6 @@ urlpatterns = [
     # Use Auth0 to verify an identity
     url(r'^user/delete/identity/(?P<identity_pk>\d+)/$', phonebook_views.delete_identity,
         name='delete_identity'),
-    url(r'^user/primary/contact/identity/(?P<identity_pk>\d+)/$',
-        phonebook_views.change_primary_contact_identity,
-        name='change_primary_contact_identity'),
     url(r'^confirm-delete/$', phonebook_views.confirm_delete, name='profile_confirm_delete'),
     url(r'^delete/$', phonebook_views.delete, name='profile_delete'),
     url(r'^user/delete_idp_profiles/$', phonebook_views.delete_idp_profiles,
@@ -28,7 +26,4 @@ urlpatterns = [
     url(r'^about/dinomcvouch$',
         allow_public(TemplateView.as_view(template_name='phonebook/about-dinomcvouch.html')),
         name='about-dinomcvouch'),
-    # CSP violation URL
-    url(r'^capture-csp-violation$', phonebook_views.capture_csp_violation,
-        name='capture-csp-violation')
 ]

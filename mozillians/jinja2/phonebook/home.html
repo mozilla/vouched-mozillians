@@ -95,18 +95,10 @@
     <div class="row">
       <div class="col-md-3">
         <article id="profile-info">
-          <a class="profile-photo" href="{{ url('phonebook:profile_view', user.username) }}">
-            <img src="{{ user.userprofile.get_photo_url('150x150') }}" alt="{{ user.username }}">
-          </a>
           <div class="profile-details">
             <h2>{{ user.username }}</h2>
             {{ user.userprofile.email }}
             {% with profile = user.userprofile %}
-            {% if profile.country or profile.region or profile.city %}
-              <section class="location">
-                {% include 'phonebook/includes/profile_location.html' %}
-              </section>
-            {% endif %}
             {% endwith %}
             {% if user.userprofile.languages.exists() %}
               <section class="languages">
