@@ -1,6 +1,7 @@
 from cities_light.models import Country
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
+
 from mozillians.users import views as user_views
 
 app_name = 'users'
@@ -15,15 +16,6 @@ urlpatterns = [
         name='voucher-autocomplete'),
     url('vouched-autocomplete/$', login_required(user_views.VouchedAutocomplete.as_view()),
         name='vouched-autocomplete'),
-    url('country-autocomplete/$', login_required(
-        user_views.CountryAutocomplete.as_view(model=Country)),
-        name='country-autocomplete'),
-    url('region-autocomplete/$', login_required(user_views.RegionAutocomplete.as_view()),
-        name='region-autocomplete'),
-    url('city-autocomplete/$', login_required(user_views.CityAutocomplete.as_view()),
-        name='city-autocomplete'),
-    url('timezone-autocomplete/$', login_required(user_views.TimeZoneAutocomplete.as_view()),
-        name='timezone-autocomplete'),
     url('staff-autocomplete/$', login_required(user_views.StaffProfilesAutocomplete.as_view()),
         name='staff-autocomplete'),
 ]

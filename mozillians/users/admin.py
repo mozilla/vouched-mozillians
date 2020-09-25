@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
+
 from mozillians.common.templatetags.helpers import get_datetime
 from mozillians.users.admin_forms import (AlternateEmailForm,
                                           UserProfileAdminForm,
@@ -19,7 +20,6 @@ from mozillians.users.admin_forms import (AlternateEmailForm,
 from mozillians.users.models import (PUBLIC, ExternalAccount, IdpProfile,
                                      Language, UsernameBlacklist, UserProfile,
                                      Vouch, get_languages_for_locale)
-from sorl.thumbnail.admin import AdminImageMixin
 
 admin.site.unregister(Group)
 
@@ -77,24 +77,6 @@ class PublicProfileFilter(SimpleListFilter):
             return queryset.filter(Q_PUBLIC_PROFILES)
 
         return queryset.exclude(Q_PUBLIC_PROFILES)
-
-
-class CompleteProfileFilter(SimpleListFilter):
-    """Admin filter for complete profiles."""
-    title = 'complete profile'
-    parameter_name = 'complete_profile'
-
-    def lookups(self, request, model_admin):
-        return (('False', 'Incomplete'),
-                ('True', 'Complete'))
-
-    def queryset(self, request, queryset):
-        if self.value() is None:
-            return queryset
-        elif self.value() == 'True':
-            return queryset.exclude(full_name='')
-        else:
-            return queryset.filter(full_name='')
 
 
 class DateJoinedFilter(SimpleListFilter):
@@ -190,69 +172,6 @@ class LegacyVouchFilter(SimpleListFilter):
         return queryset
 
 
-class MissingCountry(SimpleListFilter):
-    """Admin filter for profiles missing country information"""
-    title = 'Missing country'
-    parameter_name = 'missing_country'
-
-    def lookups(self, request, model_admin):
-        return (('both', 'Both geo_country/country'),
-                ('geo_country', 'Only geo_country'),
-                ('country', 'Only country'))
-
-    def queryset(self, request, queryset):
-
-        if self.value() == 'both':
-            return queryset.filter(country__isnull=True, geo_country__isnull=True)
-        elif self.value() == 'geo_country':
-            return queryset.filter(geo_country__isnull=True)
-        elif self.value() == 'country':
-            return queryset.filter(country__isnull=True)
-        return queryset
-
-
-class MissingRegion(SimpleListFilter):
-    """Admin filter for profiles missing region information"""
-    title = 'Missing region'
-    parameter_name = 'missing_region'
-
-    def lookups(self, request, model_admin):
-        return (('both', 'Both geo_region/region'),
-                ('geo_region', 'Only geo_region'),
-                ('region', 'Only region'))
-
-    def queryset(self, request, queryset):
-
-        if self.value() == 'both':
-            return queryset.filter(region__isnull=True, geo_region__isnull=True)
-        elif self.value() == 'geo_region':
-            return queryset.filter(geo_region__isnull=True)
-        elif self.value() == 'region':
-            return queryset.filter(region__isnull=True)
-        return queryset
-
-
-class MissingCity(SimpleListFilter):
-    """Admin filter for profiles missing city information"""
-    title = 'Missing city'
-    parameter_name = 'missing_city'
-
-    def lookups(self, request, model_admin):
-        return (('both', 'Both geo_city/city'),
-                ('geo_city', 'Only geo_city'),
-                ('city', 'Only city'))
-
-    def queryset(self, request, queryset):
-
-        if self.value() == 'both':
-            return queryset.filter(city__isnull=True, geo_city__isnull=True)
-        elif self.value() == 'geo_city':
-            return queryset.filter(geo_city__isnull=True)
-        elif self.value() == 'city':
-            return queryset.filter(city__isnull=True)
-        return queryset
-
-
 class UsernameBlacklistAdmin(admin.ModelAdmin):
     """UsernameBlacklist Admin."""
     save_on_top = True
@@ -331,32 +250,30 @@ class AlternateEmailInline(admin.TabularInline):
         return qs.filter(type=ExternalAccount.TYPE_EMAIL)
 
 
-class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
+class UserProfileAdmin(admin.ModelAdmin):
     inlines = [LanguageInline, ExternalAccountInline,
                AlternateEmailInline]
-    search_fields = ['full_name', 'user__email', 'user__username',
-                     'country__name', 'region__name', 'city__name', 'is_staff']
+    search_fields = ['full_name', 'user__email', 'user__username', 'is_staff']
     readonly_fields = ['date_vouched', 'vouched_by', 'user', 'date_joined', 'last_login',
                        'is_vouched', 'can_vouch']
     form = UserProfileAdminForm
     list_filter = ['is_vouched', 'can_vouch', DateJoinedFilter,
                    LastLoginFilter, LegacyVouchFilter, SuperUserFilter,
-                   CompleteProfileFilter, PublicProfileFilter, AlternateEmailFilter,
-                   MissingCountry, MissingRegion,
-                   MissingCity, 'externalaccount__type']
+                   PublicProfileFilter, AlternateEmailFilter,
+                   'externalaccount__type']
     save_on_top = True
-    list_display = ['full_name', 'email', 'username', 'country', 'is_vouched', 'can_vouch',
+    list_display = ['full_name', 'email', 'username', 'is_vouched', 'can_vouch',
                     'number_of_vouchees', 'date_joined']
     list_display_links = ['full_name', 'email', 'username']
     actions = [update_vouch_flags_action()]
 
     fieldsets = (
         ('Account', {
-            'fields': ('full_name', 'username', 'email', 'photo',
+            'fields': ('full_name', 'username', 'email',
                        'auth0_user_id', 'is_staff',)
         }),
         (None, {
-            'fields': ('title', 'bio', 'date_mozillian',)
+            'fields': ('date_mozillian',)
         }),
         ('Important dates', {
             'fields': ('date_joined', 'last_login')
@@ -364,15 +281,8 @@ class UserProfileAdmin(AdminImageMixin, admin.ModelAdmin):
         ('Vouch Info', {
             'fields': ('date_vouched', 'is_vouched', 'can_vouch')
         }),
-        ('Location', {
-            'fields': ('country', 'region', 'city', 'lng', 'lat', 'timezone')
-        }),
         ('Privacy Settings', {
-            'fields': ('privacy_photo', 'privacy_full_name',
-                       'privacy_email', 'privacy_bio',
-                       'privacy_city', 'privacy_region', 'privacy_country', 'privacy_languages',
-                       'privacy_date_mozillian', 'privacy_timezone',
-                       'privacy_title'),
+            'fields': ('privacy_full_name', 'privacy_email', 'privacy_languages', 'privacy_data_mozillians',),
             'classes': ('collapse',)
         }),
     )

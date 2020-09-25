@@ -3,10 +3,6 @@ import logging
 from urllib import urlencode
 
 import requests
-from josepy.jwk import JWK
-from josepy.jws import JWS
-
-import mozillians.phonebook.forms as forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -24,9 +20,14 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import View
+from josepy.jwk import JWK
+from josepy.jws import JWS
 from mozilla_django_oidc.utils import absolutify, import_from_settings
 from mozilla_django_oidc.views import (OIDCAuthenticationRequestView,
                                        get_next_url)
+from raven.contrib.django.models import client
+
+import mozillians.phonebook.forms as forms
 from mozillians.common.decorators import allow_public, allow_unvouched
 from mozillians.common.middleware import GET_VOUCHED_MESSAGE, LOGIN_MESSAGE
 from mozillians.common.templatetags.helpers import (get_object_or_none,
@@ -35,7 +36,6 @@ from mozillians.common.templatetags.helpers import (get_object_or_none,
 from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
-from raven.contrib.django.models import client
 
 ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
 
@@ -119,7 +119,6 @@ def edit_profile(request):
         'basic_section': ['user_form', 'basic_information_form'],
         'idp_section': ['idp_profile_formset'],
         'accounts_section': ['accounts_formset'],
-        'location_section': ['location_form'],
         'contribution_section': ['contribution_form'],
     }
 
@@ -139,7 +138,6 @@ def edit_profile(request):
     ctx['accounts_formset'] = forms.AccountsFormset(get_request_data('accounts_formset'),
                                                     instance=profile,
                                                     queryset=accounts_qs)
-    ctx['location_form'] = forms.LocationForm(get_request_data('location_form'), instance=profile)
     ctx['contribution_form'] = forms.ContributionForm(get_request_data('contribution_form'),
                                                       instance=profile)
     ctx['idp_profile_formset'] = forms.IdpProfileFormset(get_request_data('idp_profile_formset'),
@@ -203,28 +201,6 @@ def delete_identity(request, identity_pk):
 
 @allow_unvouched
 @never_cache
-def change_primary_contact_identity(request, identity_pk):
-    """Change primary email address."""
-    user = User.objects.get(pk=request.user.id)
-    profile = user.userprofile
-    alternate_identities = IdpProfile.objects.filter(profile=profile)
-
-    # Only email owner can change primary email
-    if not alternate_identities.filter(pk=identity_pk).exists():
-        raise Http404()
-
-    if alternate_identities.filter(primary_contact_identity=True).exists():
-        alternate_identities.filter(pk=identity_pk).update(primary_contact_identity=True)
-        alternate_identities.exclude(pk=identity_pk).update(primary_contact_identity=False)
-
-        msg = _(u'Primary Contact Identity successfully updated.')
-        messages.success(request, msg)
-
-    return redirect('phonebook:profile_edit')
-
-
-@allow_unvouched
-@never_cache
 def confirm_delete(request):
     """Display a confirmation page asking the user if they want to
     leave.
@@ -247,34 +223,6 @@ def logout(request):
     """View that logs out the user and redirects to home page."""
     auth_logout(request)
     return redirect('phonebook:home')
-
-
-@require_POST
-@csrf_exempt
-@allow_public
-def capture_csp_violation(request):
-    data = client.get_data_from_request(request)
-    data.update({
-        'level': logging.INFO,
-        'logger': 'CSP',
-    })
-    try:
-        csp_data = json.loads(request.body)
-    except ValueError:
-        # Cannot decode CSP violation data, ignore
-        return HttpResponseBadRequest('Invalid CSP Report')
-
-    try:
-        blocked_uri = csp_data['csp-report']['blocked-uri']
-    except KeyError:
-        # Incomplete CSP report
-        return HttpResponseBadRequest('Incomplete CSP Report')
-
-    client.captureMessage(
-        message='CSP Violation: {}'.format(blocked_uri),
-        data=data)
-
-    return HttpResponse('Captured CSP violation, thanks for reporting.')
 
 
 @allow_unvouched

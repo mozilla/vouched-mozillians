@@ -64,70 +64,6 @@
     </div>
   {% endif %}
   <div class="vcard h-card">
-    <article id="profile-stats">
-      <div class="profile-photo">
-        <a href="{{ profile.get_photo_url('800', upscale=False) }}">
-          <img src="{{ profile.get_photo_url('150x150') }}"
-               alt="{{ shown_user.username }}" class="photo">
-        </a>
-      </div>
-      <div class="stats">
-        {% set mozillian_years = get_mozillian_years(profile) %}
-        {% if not mozillian_years is none %}
-          <section id="membership">
-              <div class="status">
-                <i class="icon-calendar"></i>
-                {% if mozillian_years > 0 %}
-                  {% trans %}
-                    Mozillian for {{ mozillian_years }} year
-                    {% pluralize %}
-                    Mozillian for {{ mozillian_years }} years
-                  {% endtrans %}
-                {% else %}
-                    Mozillian for less than a year
-                {% endif %}
-                <span>{{ profile.date_mozillian.strftime('%b %Y') }}</span>
-              </div>
-          </section>
-        {% endif %}
-        {% if profile.country or profile.region or profile.city %}
-          <section id="location" class="adr">
-            <i class="icon-globe"></i>
-            {% include 'phonebook/includes/profile_location.html' %}
-          </section>
-        {% endif %}
-        {% if profile.timezone %}
-          <section id="timezone" data-timezone-offset="{{ profile.timezone_offset()|default('notset') }}">
-            <i class="icon-clock-o"></i>
-            {{ now_in_timezone(profile.timezone).strftime('%H:%M') }}
-            {{ profile.timezone }}
-          </section>
-        {% endif %}
-       </div>
-
-      <section id="profile-contact">
-        <div class="contact-details">
-            {% if profile.email %}
-              <section class="u-email">
-                <i class="icon-envelope-o"></i>
-                {% if user != shown_user %}<a href="mailto:{{ profile.email }}">{% endif %}
-                  <span class="email">{{ profile.email }}</span>
-                {% if user != shown_user %}</a>{% endif %}
-              </section>
-            {% endif %}
-            {# Only show github primary accounts #}
-            {% if primary_identity.exists() and primary_identity[0].type == 30 and primary_identity[0].username %}
-              {% set idp = primary_identity[0] %}
-              <section class="p-github">
-                <i class="icon-github"></i>
-                <span class="github_url">{{ idp|get_idp_external_url }}</span>
-              </section>
-            {% endif %}
-        </div>
-      </section>
-
-    </article>
-
 
     <article id="profile-info">
       <header>
@@ -167,20 +103,22 @@
 
 
       <section id="profile-details">
-        {% if profile.bio %}
-          <div id="bio" class="profile-entry">
-              <h3><i class="icon-user"></i> {{ _('Bio') }}</h3>
-                <span class="note">{{ profile.bio|markdown }}</span>
-          </div>
-        {% endif %}
-
-        {% if profile.story_link %}
-          <div id="story-link" class="profile-entry">
-            <p>
-              <a href="{{ profile.story_link }}">{{ _('My contribution story') }}</a>
-            </p>
-          </div>
-        {% endif %}
+        <div class="stats">
+          {% set mozillian_years = get_mozillian_years(profile) %}
+          {% if not mozillian_years is none %}
+            <section id="membership">
+                <div class="status">
+                  <i class="icon-calendar"></i>
+                  {% if mozillian_years > 1 %}
+                      Mozillian for {{ mozillian_years }} years -
+                  {% else %}
+                      Mozillian for less than a year -
+                  {% endif %}
+                  <span>{{ profile.date_mozillian.strftime('%b %Y') }}</span>
+                </div>
+            </section>
+          {% endif %}
+        </div>
 
         {% if profile.languages.exists() %}
           <div id="languages" class="profile-entry">
@@ -189,61 +127,6 @@
                 {{ langcode_to_name(language.code) }}
                 {%- if not loop.last %},{% endif %}
               {% endfor %}
-          </div>
-        {% endif %}
-
-        {% if profile.websites.exists() %}
-          <div id="websites" class="profile-entry">
-            <h3><i class="icon-chain"></i> {{ _('Websites') }}</h3>
-            <ul>
-              {% for site in profile.websites %}
-                <li class="u-url">
-                  <a href="{{ site.identifier }}">
-                    <span class="url">{{ site.identifier }}</span>
-                  </a>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-
-        {% if profile.accounts.exists() %}
-          <div id="externalaccounts" class="profile-entry">
-            <h3><i class="icon-external-link"></i> {{ _('External Accounts') }}</h3>
-            <ul>
-              {% for account in profile.accounts %}
-                <li>
-                  {{ account.get_type_display() }}:
-                  {% if account.get_identifier_url() -%}
-                    <a href="{{ account.get_identifier_url() }}">{{ account.identifier }}</a>
-                  {%- else -%}
-                    {{ account.identifier|simple_urlize() }}
-                  {%- endif -%}
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-        {% endif %}
-
-        {% if alternate_identities %}
-          <div id="alternate_email" class="profile-entry">
-            <h3><i class="icon-envelope-o"></i> {{ _('Alternate Contact Identities') }}</h3>
-            <ul>
-              {% for idp in alternate_identities %}
-                <li>
-                  {{ idp.get_type_display() }} -
-                  {% if user != shown_user %}
-                    {{ idp.email|urlize }}
-                  {% else %}
-                    {{ idp.email }}
-                  {% endif %}
-                  {% set username=idp|get_idp_external_url %}
-                  {% if username %}
-                    - {{ username }}
-                  {% endif %}
-                </li>
-              {% endfor %}
-            </ul>
           </div>
         {% endif %}
 
@@ -300,16 +183,6 @@
     <span class="hidden category">Mozillians</span>
 
   </div>
-  {# strings that need translating, used from profile_view.js, replacing %HOURS% #}
-  <span class="hidden" id="hours_ahead_text">
-    {%- trans hours="%HOURS%" %}{{ hours }} hours ahead of your timezone.{% endtrans -%}
-  </span>
-  <span class="hidden" id="hours_behind_text">
-    {%- trans hours="%HOURS%" %}{{ hours }} hours behind your timezone.{% endtrans -%}
-  </span>
-  <span class="hidden" id="same_timezone_text">
-    {%- trans %}Same time zone as yours.{% endtrans -%}
-  </span>
 {% endblock %}
 
 {% block page_js %}

@@ -21,8 +21,6 @@
           </ul>
         {% endif %}
 
-        {% include 'phonebook/includes/photo_form.html' %}
-
         <fieldset>
           <div class="row">
             <div class="col-md-8 col-sm-6">
@@ -50,21 +48,6 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <div class="row">
-            <div class="col-md-8 col-sm-6">
-              {{ mozillians_field(basic_information_form.bio) }}
-              <span class="under-input-field">
-                {% trans url='http://daringfireball.net/projects/markdown/syntax' %}
-                  Use <a href="{{ url }}">Markdown</a> for bold, italic, lists and links.
-                {% endtrans %}
-              </span>
-            </div>
-            <div class="col-md-4 col-sm-6 text-right">
-              {{ privacy_field(basic_information_form.privacy_bio) }}
-            </div>
-          </div>
-        </fieldset>
       </div>
 
       <div class="panel-footer">
@@ -115,11 +98,6 @@
                 </span>
                 {{ form.id }}
                 <div class="identity-profiles-controls">
-                  {% if not form.instance.primary_contact_identity %}
-                    <a class="button" href="{{ url('phonebook:change_primary_contact_identity', form.instance.pk) }}">
-                      Show on Profile
-                    </a>
-                  {% endif %}
                   {% if not form.instance.primary and not form.instance.primary_contact_identity %}
                     <a class="delete" href="{{ url('phonebook:delete_identity', form.instance.pk) }}">
                       Delete
@@ -139,11 +117,6 @@
             are not shown.
           </div>
 
-      </div>
-      <div class="panel-footer">
-        <button class="btn btn-primary" id="form-submit-identity" type="submit"
-                name="idp_section">{{ _('Update Identities') }}
-        </button>
       </div>
     </div>
   </form>
