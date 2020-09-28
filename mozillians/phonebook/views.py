@@ -21,16 +21,11 @@ from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
 ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
 
 
-@allow_unvouched
-def login(request):
-    if request.user.userprofile.is_complete:
-        return redirect('phonebook:home')
-    return redirect('phonebook:profile_edit')
-
-
 @never_cache
 @allow_public
 def home(request):
+    if request.user.is_authenticated():
+        return redirect('phonebook:profile_view', request.user.username)
     return render(request, 'phonebook/home.html')
 
 

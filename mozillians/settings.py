@@ -259,7 +259,7 @@ USERNAME_MAX_LENGTH = config('USERNAME_MAX_LENGTH', default=30, cast=int)
 
 # On Login, we redirect through register.
 LOGIN_URL = config('LOGIN_URL', default='/')
-LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/login/')
+LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/')
 
 # django-mobility
 MOBILE_COOKIE = config('MOBILE_COOKIE', default='mobile')
