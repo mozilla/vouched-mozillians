@@ -25,9 +25,6 @@
             <li role="presentation" class="active" id="profile-tab">
               <a href="#profile" aria-controls="description" role="tab" data-toggle="tab">{{ _('Profile') }}</a>
             </li>
-            <li role="presentation" id="youandmozilla-tab">
-              <a href="#youandmozilla" aria-controls="youandmozilla" role="tab" data-toggle="tab">{{ _('You &amp; Mozilla') }}</a>
-            </li>
           </ul>
         </div>
       </div>
@@ -36,9 +33,6 @@
         <div class="tab-content">
           <!-- Profile Tab -->
           {% include 'phonebook/includes/profile_edit_basic.html' %}
-
-          <!-- You &amp; Mozilla -->
-          {% include 'phonebook/includes/profile_edit_you.html' %}
 
           <div class="panel panel-info settings-all hidden-md hidden-lg">
             <div class="panel-heading">

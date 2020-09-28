@@ -6,16 +6,12 @@
       <div class="panel-body">
 
         {% if (basic_information_form.non_field_errors()
-               or user_form.non_field_errors()
-               or idp_profile_formset.non_form_errors()) %}
+               or user_form.non_field_errors()) %}
           <ul class="unstyled">
             {% for error in basic_information_form.non_field_errors() %}
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
             {% for error in user_form.non_field_errors() %}
-              <li class="alert alert-error">{{ error }}</li>
-            {% endfor %}
-            {% for error in idp_profile_formset.non_form_errors() %}
               <li class="alert alert-error">{{ error }}</li>
             {% endfor %}
           </ul>
@@ -52,71 +48,6 @@
 
       <div class="panel-footer">
         <button class="btn btn-primary" id="form-submit-basic" type="submit" name="basic_section">{{ _('Update Information') }}</button>
-      </div>
-    </div>
-  </form>
-
-  <form class="edit-profile" method="POST" action="{{ url('phonebook:profile_edit') }}?next=profile">
-    {% csrf_token %}
-    <div class="panel panel-default">
-      <div class="panel-heading">{{ _('Profile Identities') }}</div>
-      <div class="panel-body">
-
-        {% if idp_primary_profile %}
-          <fieldset>
-            <label class="identity-profile-label">{{ _('Primary Login Identity') }}</label>
-            <div class="row">
-              <div class="col-md-8 col-sm-6">
-                <span class="email">
-                  {{ idp_primary_profile.get_type_display() }}
-                  {{ idp_primary_profile.email }}
-                </span>
-              </div>
-            </div>
-
-            <div class="help-block">
-              This is the primary identity used to login. This identity has privacy controls that can be used to
-              control the visibility of the email associated with this identity.
-            </div>
-          </fieldset>
-        {% endif %}
-
-        <fieldset id="idp-profiles">
-          <label class="identity-profile-label">{{ _('Contact Identities') }}</label>
-          {{ idp_profile_formset.management_form }}
-
-          {% for form in idp_profile_formset %}
-            <div class="row idp-profiles-fieldrow">
-              <div class="col-sm-8">
-                <span class="identity-profile">
-                  {{ form.instance.get_type_display() }} -
-                  {{ form.instance.email }}
-                  {% set username=form.instance|get_idp_external_url %}
-                  {% if username %}
-                    - {{ username }}
-                  {% endif %}
-                </span>
-                {{ form.id }}
-                <div class="identity-profiles-controls">
-                  {% if not form.instance.primary and not form.instance.primary_contact_identity %}
-                    <a class="delete" href="{{ url('phonebook:delete_identity', form.instance.pk) }}">
-                      Delete
-                    </a>
-                  {% endif %}
-                </div>
-              </div>
-              <div class="col-sm-4">
-                {{ privacy_field(form.privacy) }}
-              </div>
-
-            </div>
-          {% endfor %}
-          <div class="help-block">
-            These are the identities displayed in the profile. The primary contact identity is shown directly under the profile
-            picture and the rest are listed in the Alternate Contact Identities section. The identities marked as Private
-            are not shown.
-          </div>
-
       </div>
     </div>
   </form>
