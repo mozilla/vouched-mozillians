@@ -86,16 +86,8 @@ def edit_profile(request):
     # Don't use request.user
     user = User.objects.get(pk=request.user.id)
     profile = user.userprofile
-    idp_profiles = IdpProfile.objects.filter(profile=profile)
-    idp_primary_profile = get_object_or_none(IdpProfile, profile=profile, primary=True)
-    # The accounts that a user can select as the primary login identity
-    accounts_qs = ExternalAccount.objects.exclude(type=ExternalAccount.TYPE_EMAIL)
-
     sections = {
         'basic_section': ['user_form', 'basic_information_form'],
-        'idp_section': ['idp_profile_formset'],
-        'accounts_section': ['accounts_formset'],
-        'contribution_section': ['contribution_form'],
     }
 
     curr_sect = next((s for s in sections.keys() if s in request.POST), None)
@@ -111,15 +103,6 @@ def edit_profile(request):
     ctx['basic_information_form'] = forms.BasicInformationForm(basic_information_data,
                                                                request.FILES or None,
                                                                instance=profile)
-    ctx['accounts_formset'] = forms.AccountsFormset(get_request_data('accounts_formset'),
-                                                    instance=profile,
-                                                    queryset=accounts_qs)
-    ctx['contribution_form'] = forms.ContributionForm(get_request_data('contribution_form'),
-                                                      instance=profile)
-    ctx['idp_profile_formset'] = forms.IdpProfileFormset(get_request_data('idp_profile_formset'),
-                                                         instance=profile,
-                                                         queryset=idp_profiles)
-    ctx['idp_primary_profile'] = idp_primary_profile
 
     forms_valid = True
     if request.POST:
