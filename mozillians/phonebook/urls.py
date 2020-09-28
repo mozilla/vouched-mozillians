@@ -7,7 +7,6 @@ from mozillians.phonebook import views as phonebook_views
 app_name = 'mozillians'
 urlpatterns = [
     url(r'^$', phonebook_views.home, name='home'),
-    url(r'^login/$', phonebook_views.login, name='login'),
     url(r'^logout/$', phonebook_views.logout, name='logout'),
     url(r'^user/edit/$', phonebook_views.edit_profile, name='profile_edit'),
     url(r'^u/(?P<username>[\w.@+-]+)/$', phonebook_views.view_profile, name='profile_view'),
