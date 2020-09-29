@@ -4,7 +4,6 @@
 from django.db import models, migrations
 import sorl.thumbnail.fields
 from django.conf import settings
-import mozillians.mozspaces.models
 
 
 class Migration(migrations.Migration):
@@ -49,7 +48,7 @@ class Migration(migrations.Migration):
             name='Photo',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('photofile', sorl.thumbnail.fields.ImageField(upload_to=mozillians.mozspaces.models._calculate_photo_filename)),
+                ('photofile', sorl.thumbnail.fields.ImageField()),
                 ('mozspace', models.ForeignKey(on_delete=models.CASCADE, related_name='photos', to='mozspaces.MozSpace')),
             ],
             options={
