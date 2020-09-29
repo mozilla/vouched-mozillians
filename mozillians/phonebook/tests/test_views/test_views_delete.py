@@ -12,29 +12,31 @@ class DeleteTests(TestCase):
     @requires_login()
     def test_confirm_delete_anonymous(self):
         client = Client()
-        client.get(reverse('phonebook:profile_confirm_delete'), follow=True)
+        client.get(reverse("phonebook:profile_confirm_delete"), follow=True)
 
     def test_confirm_delete_unvouched(self):
         user = UserFactory.create(vouched=False)
         with self.login(user) as client:
-            response = client.get(reverse('phonebook:profile_confirm_delete'),
-                                  follow=True)
+            response = client.get(
+                reverse("phonebook:profile_confirm_delete"), follow=True
+            )
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/confirm_delete.html')
+        self.assertTemplateUsed(response, "phonebook/confirm_delete.html")
 
     def test_confirm_delete_vouched(self):
         user = UserFactory.create()
         with self.login(user) as client:
-            response = client.get(reverse('phonebook:profile_confirm_delete'),
-                                  follow=True)
+            response = client.get(
+                reverse("phonebook:profile_confirm_delete"), follow=True
+            )
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/confirm_delete.html')
+        self.assertTemplateUsed(response, "phonebook/confirm_delete.html")
 
     def test_delete_get_method(self):
         user = UserFactory.create()
 
-        with override_script_prefix('/en-US'):
-            url = reverse('phonebook:profile_delete')
+        with override_script_prefix("/en-US"):
+            url = reverse("phonebook:profile_delete")
 
         with self.login(user) as client:
             response = client.get(url, follow=True)
@@ -43,4 +45,4 @@ class DeleteTests(TestCase):
     @requires_login()
     def test_delete_anonymous(self):
         client = Client()
-        client.post(reverse('phonebook:profile_delete'), follow=True)
+        client.post(reverse("phonebook:profile_delete"), follow=True)

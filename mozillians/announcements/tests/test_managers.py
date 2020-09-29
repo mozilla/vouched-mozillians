@@ -14,15 +14,18 @@ class AnnouncementManagerTests(TestCase):
     def setUp(self):
         AnnouncementFactory.create(
             publish_from=make_aware(datetime(2013, 2, 12), pytz.UTC),
-            publish_until=make_aware(datetime(2013, 2, 18), pytz.UTC))
+            publish_until=make_aware(datetime(2013, 2, 18), pytz.UTC),
+        )
         AnnouncementFactory.create(
             publish_from=make_aware(datetime(2013, 2, 15), pytz.UTC),
-            publish_until=make_aware(datetime(2013, 2, 17), pytz.UTC))
+            publish_until=make_aware(datetime(2013, 2, 17), pytz.UTC),
+        )
         AnnouncementFactory.create(
             publish_from=make_aware(datetime(2013, 2, 21), pytz.UTC),
-            publish_until=make_aware(datetime(2013, 2, 23), pytz.UTC))
+            publish_until=make_aware(datetime(2013, 2, 23), pytz.UTC),
+        )
 
-    @patch('mozillians.announcements.managers.now')
+    @patch("mozillians.announcements.managers.now")
     def test_published(self, mock_obj):
         """Test published() of Announcement Manager."""
         mock_obj.return_value = make_aware(datetime(2013, 2, 10), pytz.UTC)
@@ -40,7 +43,7 @@ class AnnouncementManagerTests(TestCase):
         mock_obj.return_value = make_aware(datetime(2013, 2, 24), pytz.UTC)
         eq_(Announcement.objects.published().count(), 0)
 
-    @patch('mozillians.announcements.managers.now')
+    @patch("mozillians.announcements.managers.now")
     def test_unpublished(self, mock_obj):
         """Test unpublished() of Announcement Manager."""
         mock_obj.return_value = make_aware(datetime(2013, 2, 10), pytz.UTC)

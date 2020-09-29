@@ -16,14 +16,14 @@ from mozillians.users.tests import UserFactory
 
 
 class VouchFormTests(TestCase):
-
     def test_vouch_not_vouched(self):
-        user = UserFactory.create(vouched=False, userprofile={'privacy_full_name': PUBLIC})
+        user = UserFactory.create(
+            vouched=False, userprofile={"privacy_full_name": PUBLIC}
+        )
         voucher = UserFactory.create(vouched=False)
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:profile_view', args=[user.username])
-        data = {'vouchee': user.userprofile.id,
-                'description': 'a reason'}
+        with override_script_prefix("/en-US/"):
+            url = reverse("phonebook:profile_view", args=[user.username])
+        data = {"vouchee": user.userprofile.id, "description": "a reason"}
         with self.login(voucher) as client:
             client.post(url, data)
         unvouched_user = User.objects.get(id=user.id)
@@ -32,30 +32,28 @@ class VouchFormTests(TestCase):
     def test_vouch_no_description(self):
         user = UserFactory.create(vouched=False)
         voucher = UserFactory.create()
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:profile_view', args=[user.username])
-        data = {'vouchee': user.userprofile.id,
-                'description': ''}
+        with override_script_prefix("/en-US/"):
+            url = reverse("phonebook:profile_view", args=[user.username])
+        data = {"vouchee": user.userprofile.id, "description": ""}
         with self.login(voucher) as client:
             client.post(url, data)
         unvouched_user = User.objects.get(id=user.id)
         ok_(not unvouched_user.userprofile.is_vouched)
 
     @override_settings(CAN_VOUCH_THRESHOLD=1)
-    @patch('mozillians.phonebook.views.messages.info')
+    @patch("mozillians.phonebook.views.messages.info")
     def test_vouch_unvouched(self, info_mock):
         user = UserFactory.create(vouched=False)
         user.userprofile.vouch(None)
         unvouched_user = UserFactory.create(vouched=False)
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:profile_view', args=[unvouched_user.username])
-        data = {'vouchee': unvouched_user.userprofile.id,
-                'description': 'a reason'}
+        with override_script_prefix("/en-US/"):
+            url = reverse("phonebook:profile_view", args=[unvouched_user.username])
+        data = {"vouchee": unvouched_user.userprofile.id, "description": "a reason"}
         with self.login(user) as client:
             response = client.post(url, data, follow=True)
         unvouched_user = User.objects.get(id=unvouched_user.id)
-        self.assertTemplateUsed(response, 'phonebook/profile.html')
-        eq_(response.context['profile'], unvouched_user.userprofile)
+        self.assertTemplateUsed(response, "phonebook/profile.html")
+        eq_(response.context["profile"], unvouched_user.userprofile)
         ok_(unvouched_user.userprofile.is_vouched)
         ok_(info_mock.called)
         self.assertRedirects(response, url)
@@ -65,24 +63,24 @@ class LogoutTests(TestCase):
     @requires_login()
     def test_logout_anonymous(self):
         client = Client()
-        client.get(reverse('phonebook:logout'), follow=True)
+        client.get(reverse("phonebook:logout"), follow=True)
 
-    @patch('mozillians.phonebook.views.auth_logout', wraps=logout_view)
+    @patch("mozillians.phonebook.views.auth_logout", wraps=logout_view)
     def test_logout_unvouched(self, logout_mock):
         user = UserFactory.create(vouched=False)
         with self.login(user) as client:
-            response = client.get(reverse('phonebook:logout'), follow=True)
+            response = client.get(reverse("phonebook:logout"), follow=True)
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/home.html')
+        self.assertTemplateUsed(response, "phonebook/home.html")
         ok_(logout_mock.called)
 
-    @patch('mozillians.phonebook.views.auth_logout', wraps=logout_view)
+    @patch("mozillians.phonebook.views.auth_logout", wraps=logout_view)
     def test_logout_vouched(self, logout_mock):
         user = UserFactory.create()
         with self.login(user) as client:
-            response = client.get(reverse('phonebook:logout'), follow=True)
+            response = client.get(reverse("phonebook:logout"), follow=True)
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/home.html')
+        self.assertTemplateUsed(response, "phonebook/home.html")
         ok_(logout_mock.called)
 
 
@@ -90,23 +88,23 @@ class ImageTests(TestCase):
     def _upload_photo(self, user, file_path):
         """Helper for the next methods."""
         data = {
-            'full_name': user.userprofile.full_name,
-            'email': user.email,
-            'username': user.username,
-            'lat': 40.005814,
-            'lng': -3.42071,
-            'photo': open(file_path, 'rb'),
-            'externalaccount_set-MAX_NUM_FORMS': '1000',
-            'externalaccount_set-INITIAL_FORMS': '0',
-            'externalaccount_set-TOTAL_FORMS': '0',
-            'language_set-MAX_NUM_FORMS': '1000',
-            'language_set-INITIAL_FORMS': '0',
-            'language_set-TOTAL_FORMS': '0',
-            'basic_section': ''
+            "full_name": user.userprofile.full_name,
+            "email": user.email,
+            "username": user.username,
+            "lat": 40.005814,
+            "lng": -3.42071,
+            "photo": open(file_path, "rb"),
+            "externalaccount_set-MAX_NUM_FORMS": "1000",
+            "externalaccount_set-INITIAL_FORMS": "0",
+            "externalaccount_set-TOTAL_FORMS": "0",
+            "language_set-MAX_NUM_FORMS": "1000",
+            "language_set-INITIAL_FORMS": "0",
+            "language_set-TOTAL_FORMS": "0",
+            "basic_section": "",
         }
         data.update(_get_privacy_fields(MOZILLIANS))
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:profile_edit')
+        with override_script_prefix("/en-US/"):
+            url = reverse("phonebook:profile_edit")
         with self.login(user) as client:
             response = client.post(url, data=data, follow=True)
         eq_(response.status_code, 200)
@@ -114,7 +112,7 @@ class ImageTests(TestCase):
     def test_exif_broken(self):
         """Test image with broken EXIF data."""
         user = UserFactory.create()
-        file_path = os.path.join(os.path.dirname(__file__), 'broken_exif.jpg')
+        file_path = os.path.join(os.path.dirname(__file__), "broken_exif.jpg")
         self._upload_photo(user, file_path)
 
     def test_no_rgb_colorspace(self):
@@ -123,8 +121,7 @@ class ImageTests(TestCase):
         Related bug 928959.
         """
         user = UserFactory.create()
-        file_path = os.path.join(os.path.dirname(__file__),
-                                 'broken_colorspace.gif')
+        file_path = os.path.join(os.path.dirname(__file__), "broken_colorspace.gif")
         self._upload_photo(user, file_path)
 
     def test_converted_larger_image(self):
@@ -144,7 +141,7 @@ class ImageTests(TestCase):
         update the size of `photo` with the new cleaned image size.
         """
         user = UserFactory.create()
-        file_path = os.path.join(os.path.dirname(__file__), 'broken_marshal.jpg')
+        file_path = os.path.join(os.path.dirname(__file__), "broken_marshal.jpg")
         self._upload_photo(user, file_path)
 
     def test_save_profile_with_existing_photo(self):
@@ -154,31 +151,31 @@ class ImageTests(TestCase):
         """
         # Set a user with a photo
         user = UserFactory.create()
-        file_path = os.path.join(os.path.dirname(__file__), 'normal_photo.jpg')
+        file_path = os.path.join(os.path.dirname(__file__), "normal_photo.jpg")
         self._upload_photo(user, file_path)
 
         # Re-save profile without uploading a new photo.
         data = {
-            'full_name': user.userprofile.full_name,
-            'email': user.email,
-            'username': user.username,
-            'lat': 40.005814,
-            'lng': -3.42071,
-            'externalaccount_set-MAX_NUM_FORMS': '1000',
-            'externalaccount_set-INITIAL_FORMS': '0',
-            'externalaccount_set-TOTAL_FORMS': '0',
-            'language_set-MAX_NUM_FORMS': '1000',
-            'language_set-INITIAL_FORMS': '0',
-            'language_set-TOTAL_FORMS': '0',
-            'basic_section': ''
+            "full_name": user.userprofile.full_name,
+            "email": user.email,
+            "username": user.username,
+            "lat": 40.005814,
+            "lng": -3.42071,
+            "externalaccount_set-MAX_NUM_FORMS": "1000",
+            "externalaccount_set-INITIAL_FORMS": "0",
+            "externalaccount_set-TOTAL_FORMS": "0",
+            "language_set-MAX_NUM_FORMS": "1000",
+            "language_set-INITIAL_FORMS": "0",
+            "language_set-TOTAL_FORMS": "0",
+            "basic_section": "",
         }
 
         for field in UserProfilePrivacyModel._meta.fields:
             data[field.name] = MOZILLIANS
-        data['privacy_tshirt'] = PRIVATE
+        data["privacy_tshirt"] = PRIVATE
 
-        with override_script_prefix('/en-US/'):
-            url = reverse('phonebook:profile_edit')
+        with override_script_prefix("/en-US/"):
+            url = reverse("phonebook:profile_edit")
         with self.login(user) as client:
             response = client.post(url, data=data, follow=True)
         eq_(response.status_code, 200)
@@ -190,27 +187,27 @@ class DateValidationTests(TestCase):
 
         Related bug 914448.
         """
-        user = UserFactory.create(email='es@example.com')
+        user = UserFactory.create(email="es@example.com")
         data = {
-            'full_name': user.userprofile.full_name,
-            'email': user.email,
-            'username': user.username,
-            'lat': 40.005814,
-            'lng': -3.42071,
-            'date_mozillian_year': '2013',
-            'date_mozillian_month': '1',
-            'externalaccount_set-MAX_NUM_FORMS': '1000',
-            'externalaccount_set-INITIAL_FORMS': '0',
-            'externalaccount_set-TOTAL_FORMS': '0',
-            'language_set-MAX_NUM_FORMS': '1000',
-            'language_set-INITIAL_FORMS': '0',
-            'language_set-TOTAL_FORMS': '0',
-            'contribution_section': ''
+            "full_name": user.userprofile.full_name,
+            "email": user.email,
+            "username": user.username,
+            "lat": 40.005814,
+            "lng": -3.42071,
+            "date_mozillian_year": "2013",
+            "date_mozillian_month": "1",
+            "externalaccount_set-MAX_NUM_FORMS": "1000",
+            "externalaccount_set-INITIAL_FORMS": "0",
+            "externalaccount_set-TOTAL_FORMS": "0",
+            "language_set-MAX_NUM_FORMS": "1000",
+            "language_set-INITIAL_FORMS": "0",
+            "language_set-TOTAL_FORMS": "0",
+            "contribution_section": "",
         }
         data.update(_get_privacy_fields(MOZILLIANS))
 
-        with override_script_prefix('/es/'):
-            url = reverse('phonebook:profile_edit')
+        with override_script_prefix("/es/"):
+            url = reverse("phonebook:profile_edit")
         with self.login(user) as client:
             response = client.post(url, data=data, follow=True)
         eq_(response.status_code, 200)
@@ -218,42 +215,41 @@ class DateValidationTests(TestCase):
 
 class AboutTests(TestCase):
     def test_base(self):
-        url = reverse('phonebook:about')
+        url = reverse("phonebook:about")
         client = Client()
         response = client.get(url, follow=True)
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/about.html')
+        self.assertTemplateUsed(response, "phonebook/about.html")
 
 
 class AboutDinoMcVouchTests(TestCase):
     def test_base(self):
-        url = reverse('phonebook:about-dinomcvouch')
+        url = reverse("phonebook:about-dinomcvouch")
         client = Client()
         response = client.get(url, follow=True)
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/about-dinomcvouch.html')
+        self.assertTemplateUsed(response, "phonebook/about-dinomcvouch.html")
 
 
 class VouchTests(TestCase):
-
-    @patch('mozillians.phonebook.views.flag_is_active')
+    @patch("mozillians.phonebook.views.flag_is_active")
     def test_vouch_disabled(self, mocked_flag):
         # Test that 'vouched' view is not active by default.
         mocked_flag.return_value = False
         user = UserFactory.create(vouched=False)
-        url = reverse('phonebook:profile_vouch', args=[user.username])
+        url = reverse("phonebook:profile_vouch", args=[user.username])
         with self.login(user) as client:
             response = client.get(url, follow=True)
         eq_(response.status_code, 404)
         user = User.objects.get(id=user.id)
         ok_(not user.userprofile.is_vouched)
 
-    @patch('mozillians.phonebook.views.flag_is_active')
+    @patch("mozillians.phonebook.views.flag_is_active")
     def test_unvouch_disabled(self, mocked_flag):
         # Test that 'unvouched' view is not active by default.
         mocked_flag.return_value = False
         user = UserFactory.create(vouched=False)
-        url = reverse('phonebook:profile_unvouch', args=[user.username])
+        url = reverse("phonebook:profile_unvouch", args=[user.username])
         with self.login(user) as client:
             response = client.get(url, follow=True)
         eq_(response.status_code, 404)
@@ -263,7 +259,7 @@ class VouchTests(TestCase):
     def test_vouch(self):
         user = UserFactory.create(vouched=False)
         ok_(not user.userprofile.is_vouched)
-        url = reverse('phonebook:profile_vouch', args=[user.username])
+        url = reverse("phonebook:profile_vouch", args=[user.username])
         with self.login(user) as client:
             client.get(url, follow=True)
         user = User.objects.get(id=user.id)
@@ -273,7 +269,7 @@ class VouchTests(TestCase):
     def test_unvouch(self):
         user = UserFactory.create()
         ok_(user.userprofile.is_vouched)
-        url = reverse('phonebook:profile_unvouch', args=[user.username])
+        url = reverse("phonebook:profile_unvouch", args=[user.username])
         with self.login(user) as client:
             client.get(url, follow=True)
         user = User.objects.get(id=user.id)

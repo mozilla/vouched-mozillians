@@ -11,24 +11,30 @@ def validate_twitter(username):
     """Return a twitter username given '@' or http(s) strings."""
 
     if username:
-        username = re.sub(r'https?://(www\.)?twitter\.com/|@', '', username)
+        username = re.sub(r"https?://(www\.)?twitter\.com/|@", "", username)
 
         # Twitter accounts must be alphanumeric ASCII including underscore, and <= 15 chars.
         # https://support.twitter.com/articles/101299-why-can-t-i-register-certain-usernames
         if len(username) > 15:
-            raise ValidationError(_('Twitter usernames cannot be longer than 15 characters.'))
+            raise ValidationError(
+                _("Twitter usernames cannot be longer than 15 characters.")
+            )
 
-        if not re.match(r'^\w+$', username):
-            raise ValidationError(_('Twitter usernames must contain only alphanumeric'
-                                    ' characters and the underscore.'))
+        if not re.match(r"^\w+$", username):
+            raise ValidationError(
+                _(
+                    "Twitter usernames must contain only alphanumeric"
+                    " characters and the underscore."
+                )
+            )
     return username
 
 
 def validate_linkedin(url):
     """Return the linkedin username from the url or the link"""
 
-    if 'view?id' not in url:
-        nick = url.rsplit('/', 1)[-1]
+    if "view?id" not in url:
+        nick = url.rsplit("/", 1)[-1]
         return nick
 
     return url
@@ -41,7 +47,7 @@ def validate_username(username):
 
     """
     username = username.lower()
-    UsernameBlacklist = apps.get_model('users', 'UsernameBlacklist')
+    UsernameBlacklist = apps.get_model("users", "UsernameBlacklist")
 
     if UsernameBlacklist.objects.filter(value=username, is_regex=False).exists():
         return False
@@ -58,13 +64,13 @@ def validate_website(url):
 
     validate_url = URLValidator()
 
-    if url and '://' not in url:
-        url = u'http://%s' % url
+    if url and "://" not in url:
+        url = "http://%s" % url
 
     try:
         validate_url(url)
     except ValidationError:
-        raise ValidationError(_('Enter a valid URL.'))
+        raise ValidationError(_("Enter a valid URL."))
 
     return url
 
@@ -72,8 +78,8 @@ def validate_website(url):
 def validate_username_not_url(username):
     """Validate that a username is not a URL."""
 
-    if username.startswith('http://') or username.startswith('https://'):
-        raise ValidationError(_('This field requires an identifier, not a URL.'))
+    if username.startswith("http://") or username.startswith("https://"):
+        raise ValidationError(_("This field requires an identifier, not a URL."))
 
     return username
 
@@ -85,21 +91,25 @@ def validate_email(value):
     try:
         _validate_email(value)
     except ValidationError:
-        raise ValidationError(_('Enter a valid email address.'))
+        raise ValidationError(_("Enter a valid email address."))
 
     return value
 
 
 def validate_phone_number(value):
     """Validate that a phone number is in international format. (5-15 characters)."""
-    value = value.replace(' ', '')
-    value = re.sub(r'^00', '+', value)
+    value = value.replace(" ", "")
+    value = re.sub(r"^00", "+", value)
 
     # Ensure that there are 5 to 15 digits
-    pattern = re.compile(r'^\+\d{5,15}$')
+    pattern = re.compile(r"^\+\d{5,15}$")
     if not pattern.match(value):
-        raise ValidationError(_('Please enter a valid phone number in international format '
-                                '(e.g. +1 555 555 5555)'))
+        raise ValidationError(
+            _(
+                "Please enter a valid phone number in international format "
+                "(e.g. +1 555 555 5555)"
+            )
+        )
 
     return value
 
@@ -107,7 +117,9 @@ def validate_phone_number(value):
 def validate_discord(value):
     """Validate that a username matches the Discord format of <username>#0000."""
 
-    if not re.match(r'^.+#[0-9]{4}$', value):
-        raise ValidationError(_('Expecting a Discord username with tag (e.g. mozillian#0001)'))
+    if not re.match(r"^.+#[0-9]{4}$", value):
+        raise ValidationError(
+            _("Expecting a Discord username with tag (e.g. mozillian#0001)")
+        )
 
     return value

@@ -11,16 +11,15 @@ from mozillians.users.tests import UserFactory
 
 
 class APIKeysTest(TestCase):
-
     def test_view_apikeys(self):
         user = UserFactory.create()
 
         with self.login(user) as client:
-            url = reverse('phonebook:apikeys')
+            url = reverse("phonebook:apikeys")
             response = client.get(url, follow=True)
 
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/apikeys.html')
+        self.assertTemplateUsed(response, "phonebook/apikeys.html")
 
     def test_delete_apikey_invalid(self):
         user = UserFactory.create()
@@ -28,34 +27,30 @@ class APIKeysTest(TestCase):
         api_key = APIv2AppFactory.create(owner=key_owner.userprofile)
 
         with self.login(user) as client:
-            url = reverse('phonebook:apikey_delete', kwargs={'api_pk': api_key.pk})
+            url = reverse("phonebook:apikey_delete", kwargs={"api_pk": api_key.pk})
             response = client.get(url, follow=True)
 
         eq_(response.status_code, 404)
 
-    @patch('mozillians.phonebook.views.messages.success')
+    @patch("mozillians.phonebook.views.messages.success")
     def test_delete_apikey_valid(self, success_mock):
         key_owner = UserFactory.create()
         api_key = APIv2AppFactory.create(owner=key_owner.userprofile)
 
         with self.login(key_owner) as client:
-            url = reverse('phonebook:apikey_delete', kwargs={'api_pk': api_key.pk})
+            url = reverse("phonebook:apikey_delete", kwargs={"api_pk": api_key.pk})
             response = client.get(url, follow=True)
 
         ok_(success_mock.called)
         eq_(response.status_code, 200)
-        self.assertTemplateUsed(response, 'phonebook/apikeys.html')
+        self.assertTemplateUsed(response, "phonebook/apikeys.html")
 
     def test_request_apikey(self):
         user = UserFactory.create()
         with self.login(user) as client:
-            with override_script_prefix('/en-US/'):
-                url = reverse('phonebook:apikeys')
-            data = {
-                'url': 'http://example.com',
-                'name': 'moomoo',
-                'description': 'bar'
-            }
+            with override_script_prefix("/en-US/"):
+                url = reverse("phonebook:apikeys")
+            data = {"url": "http://example.com", "name": "moomoo", "description": "bar"}
             client.post(url, data)
 
         app_qs = APIv2App.objects.all()

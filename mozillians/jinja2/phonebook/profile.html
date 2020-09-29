@@ -16,7 +16,7 @@
       {{ _('Mozillian Profile') }}
     {% endif %}
   </div>
-  {% if user.is_authenticated() and not profile.is_vouched %}
+  {% if user.is_authenticated and not profile.is_vouched %}
     {% if user == shown_user %}
       <div id="pending-approval">
         {% trans vouching_url='https://wiki.mozilla.org/Mozillians/Vouching',

@@ -3,7 +3,7 @@
 import logging
 from django.conf import settings
 
-__all__ = ['patch']
+__all__ = ["patch"]
 
 
 # Idempotence! http://en.wikipedia.org/wiki/Idempotence
@@ -17,8 +17,9 @@ def patch():
 
     # Monkey-patch Django's csrf_protect decorator to use session-based CSRF
     # tokens:
-    if 'session_csrf' in settings.INSTALLED_APPS:
+    if "session_csrf" in settings.INSTALLED_APPS:
         import session_csrf
+
         session_csrf.monkeypatch()
 
     logging.debug("Note: funfactory monkey patches executed in %s" % __file__)

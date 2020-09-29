@@ -11,11 +11,11 @@ def _set_attribute_func(function, attribute, value):
 
 def allow_public(function):
     """Allow view to be accessed by anonymous users."""
-    _set_attribute_func(function, '_allow_public', True)
+    _set_attribute_func(function, "_allow_public", True)
     return function
 
 
 def allow_unvouched(function):
     """Allow view to be accessed by unvouched users."""
-    _set_attribute_func(function, '_allow_unvouched', True)
+    _set_attribute_func(function, "_allow_unvouched", True)
     return function

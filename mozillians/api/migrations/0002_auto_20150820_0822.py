@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 from django.conf import settings
@@ -17,13 +17,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='apiv2app',
             name='owner',
-            field=models.ForeignKey(related_name='apps', to='users.UserProfile'),
+            field=models.ForeignKey(on_delete=models.CASCADE, related_name='apps', to='users.UserProfile'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='apiapp',
             name='owner',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(on_delete=models.CASCADE, to=settings.AUTH_USER_MODEL),
             preserve_default=True,
         ),
     ]

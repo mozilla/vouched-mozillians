@@ -1,0 +1,17 @@
+# from dev.txt
+
+-r prod.in
+
+Sphinx
+cssselect
+flake8
+ipdb
+ipython
+mock
+pyquery
+pep8
+pyflakes
+sqlparse
+configparser
+factory_boy
+pip-compile-multi

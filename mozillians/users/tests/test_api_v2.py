@@ -9,49 +9,67 @@ from mozillians.common.tests import TestCase
 from mozillians.groups.models import Group
 from mozillians.groups.tests import GroupFactory
 from mozillians.users.managers import MOZILLIANS, PUBLIC
-from mozillians.users.models import (GroupMembership, ExternalAccount, IdpProfile,
-                                     Language, UserProfile)
-from mozillians.users.tests import CityFactory, CountryFactory, RegionFactory, UserFactory
-from mozillians.users.api.v2 import (ExternalAccountSerializer,
-                                     LanguageSerializer,
-                                     UserProfileDetailedSerializer,
-                                     UserProfileFilter,
-                                     UserProfileSerializer,
-                                     UserProfileViewSet,
-                                     WebsiteSerializer)
+from mozillians.users.models import (
+    GroupMembership,
+    ExternalAccount,
+    IdpProfile,
+    Language,
+    UserProfile,
+)
+from mozillians.users.tests import (
+    CityFactory,
+    CountryFactory,
+    RegionFactory,
+    UserFactory,
+)
+from mozillians.users.api.v2 import (
+    ExternalAccountSerializer,
+    LanguageSerializer,
+    UserProfileDetailedSerializer,
+    UserProfileFilter,
+    UserProfileSerializer,
+    UserProfileViewSet,
+    WebsiteSerializer,
+)
 
 
 class ExternalAccountSerializerTests(TestCase):
     def test_base(self):
-        account = ExternalAccount(identifier='foobar',
-                                  type=ExternalAccount.TYPE_AMO, privacy=PUBLIC)
+        account = ExternalAccount(
+            identifier="foobar", type=ExternalAccount.TYPE_AMO, privacy=PUBLIC
+        )
         serializer = ExternalAccountSerializer(account)
         data = serializer.data
 
-        eq_(data, {'type': 'amo',
-                   'identifier': 'foobar',
-                   'name': 'Mozilla Add-ons',
-                   'privacy': 'Public'})
+        eq_(
+            data,
+            {
+                "type": "amo",
+                "identifier": "foobar",
+                "name": "Mozilla Add-ons",
+                "privacy": "Public",
+            },
+        )
 
 
 class WebsiteSerializerTests(TestCase):
     def test_base(self):
-        account = ExternalAccount(identifier='http://example.com',
-                                  type=ExternalAccount.TYPE_WEBSITE, privacy=PUBLIC)
+        account = ExternalAccount(
+            identifier="http://example.com",
+            type=ExternalAccount.TYPE_WEBSITE,
+            privacy=PUBLIC,
+        )
         serializer = WebsiteSerializer(account)
         data = serializer.data
-        eq_(data, {'website': 'http://example.com',
-                   'privacy': 'Public'})
+        eq_(data, {"website": "http://example.com", "privacy": "Public"})
 
 
 class LanguageSerializerTests(TestCase):
     def test_base(self):
-        language = Language(code='el')
+        language = Language(code="el")
         serializer = LanguageSerializer(language)
         data = serializer.data
-        eq_(data, {'code': 'el',
-                   'english': 'Greek',
-                   'native': u'Ελληνικά'})
+        eq_(data, {"code": "el", "english": "Greek", "native": "Ελληνικά"})
 
 
 class UserProfileSerializerTests(TestCase):
@@ -59,14 +77,14 @@ class UserProfileSerializerTests(TestCase):
         self.factory = RequestFactory()
 
     def test_base(self):
-        user = UserFactory.create(username='foo')
+        user = UserFactory.create(username="foo")
         profile = user.userprofile
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileSerializer(profile, context=context)
         data = serializer.data
-        eq_(data['username'], 'foo')
-        eq_(data['is_vouched'], True)
-        ok_(data['_url'])
+        eq_(data["username"], "foo")
+        eq_(data["is_vouched"], True)
+        ok_(data["_url"])
 
 
 class UserProfileDetailedSerializerTests(TestCase):
@@ -74,173 +92,173 @@ class UserProfileDetailedSerializerTests(TestCase):
         self.factory = RequestFactory()
 
     def test_transform_timezone(self):
-        user = UserFactory.create(userprofile={'timezone': 'Europe/Athens'})
+        user = UserFactory.create(userprofile={"timezone": "Europe/Athens"})
         user.userprofile._groups = Group.objects.none()
         timezone_mock = Mock()
         timezone_mock.return_value = 99
         user.userprofile.timezone_offset = timezone_mock
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        timezone = {'value': 'Europe/Athens',
-                    'utc_offset': 99,
-                    'privacy': 'Mozillians'}
-        eq_(serializer.data['timezone'], timezone)
+        timezone = {"value": "Europe/Athens", "utc_offset": 99, "privacy": "Mozillians"}
+        eq_(serializer.data["timezone"], timezone)
 
     def test_transform_bio(self):
-        user = UserFactory.create(userprofile={'bio': '*foo*'})
+        user = UserFactory.create(userprofile={"bio": "*foo*"})
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        bio = {'value': '*foo*',
-               'html': '<p><em>foo</em></p>',
-               'privacy': 'Mozillians'}
-        eq_(serializer.data['bio'], bio)
+        bio = {"value": "*foo*", "html": "<p><em>foo</em></p>", "privacy": "Mozillians"}
+        eq_(serializer.data["bio"], bio)
 
     def test_transform_photo(self):
         def _get_url(dimensions):
             return dimensions
 
-        user = UserFactory.create(userprofile={'timezone': 'Europe/Athens'})
+        user = UserFactory.create(userprofile={"timezone": "Europe/Athens"})
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         get_photo_url_mock = Mock()
         get_photo_url_mock.side_effect = _get_url
         user.userprofile.get_photo_url = get_photo_url_mock
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        photo = {'value': '300x300',
-                 '150x150': '150x150',
-                 '300x300': '300x300',
-                 '500x500': '500x500',
-                 'privacy': 'Mozillians'}
-        eq_(serializer.data['photo'], photo)
+        photo = {
+            "value": "300x300",
+            "150x150": "150x150",
+            "300x300": "300x300",
+            "500x500": "500x500",
+            "privacy": "Mozillians",
+        }
+        eq_(serializer.data["photo"], photo)
 
     def test_get_country(self):
-        context = {'request': self.factory.get('/')}
-        country = CountryFactory.create(name='LA', code2='IO')
-        user = UserFactory.create(userprofile={'country': country})
+        context = {"request": self.factory.get("/")}
+        country = CountryFactory.create(name="LA", code2="IO")
+        user = UserFactory.create(userprofile={"country": country})
         user.userprofile._groups = Group.objects.none()
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        country = {'code': 'IO',
-                   'value': 'LA',
-                   'privacy': 'Mozillians'}
-        eq_(serializer.data['country'], country)
+        country = {"code": "IO", "value": "LA", "privacy": "Mozillians"}
+        eq_(serializer.data["country"], country)
 
     def test_transform_region(self):
-        region = RegionFactory.create(name='LA')
-        user = UserFactory.create(userprofile={'region': region})
+        region = RegionFactory.create(name="LA")
+        user = UserFactory.create(userprofile={"region": region})
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        region = {'value': 'LA',
-                  'privacy': 'Mozillians'}
-        eq_(serializer.data['region'], region)
+        region = {"value": "LA", "privacy": "Mozillians"}
+        eq_(serializer.data["region"], region)
 
     def test_transform_city(self):
-        city = CityFactory.create(name='LA')
-        user = UserFactory.create(userprofile={'city': city})
+        city = CityFactory.create(name="LA")
+        user = UserFactory.create(userprofile={"city": city})
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        city = {'value': 'LA',
-                'privacy': 'Mozillians'}
-        eq_(serializer.data['city'], city)
+        city = {"value": "LA", "privacy": "Mozillians"}
+        eq_(serializer.data["city"], city)
 
     def test_transform_tshirt(self):
-        user = UserFactory.create(userprofile={'tshirt': 9})
+        user = UserFactory.create(userprofile={"tshirt": 9})
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        tshirt = {'value': 9,
-                  'english': 'Straight-cut Large',
-                  'privacy': 'Private'}
-        eq_(serializer.data['tshirt'], tshirt)
+        tshirt = {"value": 9, "english": "Straight-cut Large", "privacy": "Private"}
+        eq_(serializer.data["tshirt"], tshirt)
 
     def test_alternate_emails_legacy(self):
         user = UserFactory.create()
         ExternalAccount.objects.create(
-            type=ExternalAccount.TYPE_EMAIL, user=user.userprofile,
-            identifier='foo@bar.com', privacy=3
+            type=ExternalAccount.TYPE_EMAIL,
+            user=user.userprofile,
+            identifier="foo@bar.com",
+            privacy=3,
         )
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        eq_(len(serializer.data['alternate_emails']), 1)
-        eq_(serializer.data['alternate_emails'][0]['email'], 'foo@bar.com')
-        eq_(serializer.data['alternate_emails'][0]['privacy'], 'Mozillians')
+        eq_(len(serializer.data["alternate_emails"]), 1)
+        eq_(serializer.data["alternate_emails"][0]["email"], "foo@bar.com")
+        eq_(serializer.data["alternate_emails"][0]["privacy"], "Mozillians")
 
     def test_alternate_emails_idp(self):
         user = UserFactory.create()
         IdpProfile.objects.create(
             profile=user.userprofile,
-            auth0_user_id='ad|foo_idp@bar.com',
-            email='foo_idp@bar.com',
-            privacy=1
+            auth0_user_id="ad|foo_idp@bar.com",
+            email="foo_idp@bar.com",
+            privacy=1,
         )
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        eq_(len(serializer.data['alternate_emails']), 1)
-        eq_(serializer.data['alternate_emails'][0]['email'], 'foo_idp@bar.com')
-        eq_(serializer.data['alternate_emails'][0]['privacy'], 'Private')
+        eq_(len(serializer.data["alternate_emails"]), 1)
+        eq_(serializer.data["alternate_emails"][0]["email"], "foo_idp@bar.com")
+        eq_(serializer.data["alternate_emails"][0]["privacy"], "Private")
 
     def test_alternate_emails_both_legacy_idp(self):
         user = UserFactory.create()
         ExternalAccount.objects.create(
-            type=ExternalAccount.TYPE_EMAIL, user=user.userprofile,
-            identifier='foo@bar.com', privacy=3
+            type=ExternalAccount.TYPE_EMAIL,
+            user=user.userprofile,
+            identifier="foo@bar.com",
+            privacy=3,
         )
         IdpProfile.objects.create(
             profile=user.userprofile,
-            auth0_user_id='ad|foo_idp@bar.com',
-            email='foo_idp@bar.com',
-            privacy=1
+            auth0_user_id="ad|foo_idp@bar.com",
+            email="foo_idp@bar.com",
+            privacy=1,
         )
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        eq_(len(serializer.data['alternate_emails']), 2)
-        eq_(serializer.data['alternate_emails'][0]['email'], 'foo@bar.com')
-        eq_(serializer.data['alternate_emails'][0]['privacy'], 'Mozillians')
-        eq_(serializer.data['alternate_emails'][1]['email'], 'foo_idp@bar.com')
-        eq_(serializer.data['alternate_emails'][1]['privacy'], 'Private')
+        eq_(len(serializer.data["alternate_emails"]), 2)
+        eq_(serializer.data["alternate_emails"][0]["email"], "foo@bar.com")
+        eq_(serializer.data["alternate_emails"][0]["privacy"], "Mozillians")
+        eq_(serializer.data["alternate_emails"][1]["email"], "foo_idp@bar.com")
+        eq_(serializer.data["alternate_emails"][1]["privacy"], "Private")
 
     def test_alternate_emails_conflicting_privacy(self):
         user = UserFactory.create()
         ExternalAccount.objects.create(
-            type=ExternalAccount.TYPE_EMAIL, user=user.userprofile,
-            identifier='foo@bar.com', privacy=3
+            type=ExternalAccount.TYPE_EMAIL,
+            user=user.userprofile,
+            identifier="foo@bar.com",
+            privacy=3,
         )
         IdpProfile.objects.create(
             profile=user.userprofile,
-            auth0_user_id='ad|foo_idp@bar.com',
-            email='foo@bar.com',
-            privacy=1
+            auth0_user_id="ad|foo_idp@bar.com",
+            email="foo@bar.com",
+            privacy=1,
         )
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        eq_(len(serializer.data['alternate_emails']), 1)
-        eq_(serializer.data['alternate_emails'][0]['email'], 'foo@bar.com')
-        eq_(serializer.data['alternate_emails'][0]['privacy'], 'Mozillians')
+        eq_(len(serializer.data["alternate_emails"]), 1)
+        eq_(serializer.data["alternate_emails"][0]["email"], "foo@bar.com")
+        eq_(serializer.data["alternate_emails"][0]["privacy"], "Mozillians")
 
     def test_alternate_emails_duplicate(self):
         user = UserFactory.create()
         ExternalAccount.objects.create(
-            type=ExternalAccount.TYPE_EMAIL, user=user.userprofile,
-            identifier='foo@bar.com', privacy=3
+            type=ExternalAccount.TYPE_EMAIL,
+            user=user.userprofile,
+            identifier="foo@bar.com",
+            privacy=3,
         )
         IdpProfile.objects.create(
             profile=user.userprofile,
-            auth0_user_id='ad|foo@bar.com',
-            email='foo@bar.com',
-            privacy=3
+            auth0_user_id="ad|foo@bar.com",
+            email="foo@bar.com",
+            privacy=3,
         )
         user.userprofile._groups = Group.objects.none()
-        context = {'request': self.factory.get('/')}
+        context = {"request": self.factory.get("/")}
         serializer = UserProfileDetailedSerializer(user.userprofile, context=context)
-        eq_(len(serializer.data['alternate_emails']), 1)
-        eq_(serializer.data['alternate_emails'][0]['email'], 'foo@bar.com')
-        eq_(serializer.data['alternate_emails'][0]['privacy'], 'Mozillians')
+        eq_(len(serializer.data["alternate_emails"]), 1)
+        eq_(serializer.data["alternate_emails"][0]["email"], "foo@bar.com")
+        eq_(serializer.data["alternate_emails"][0]["privacy"], "Mozillians")
 
 
 class UserProfileViewSetTests(TestCase):
@@ -248,18 +266,20 @@ class UserProfileViewSetTests(TestCase):
         viewset = UserProfileViewSet()
         viewset.request = Mock()
         viewset.request.privacy_level = PUBLIC
-        with patch('mozillians.users.api.v2.UserProfile') as userprofile_mock:
+        with patch("mozillians.users.api.v2.UserProfile") as userprofile_mock:
             viewset.get_queryset()
 
         ok_(userprofile_mock.objects.complete.called)
         ok_(userprofile_mock.objects.complete().public.called)
-        userprofile_mock.objects.complete().public().privacy_level.assert_called_with(PUBLIC)
+        userprofile_mock.objects.complete().public().privacy_level.assert_called_with(
+            PUBLIC
+        )
 
     def test_get_queryset_non_public(self):
         viewset = UserProfileViewSet()
         viewset.request = Mock()
         viewset.request.privacy_level = MOZILLIANS
-        with patch('mozillians.users.api.v2.UserProfile') as userprofile_mock:
+        with patch("mozillians.users.api.v2.UserProfile") as userprofile_mock:
             viewset.get_queryset()
 
         ok_(userprofile_mock.objects.complete.called)
@@ -270,7 +290,9 @@ class UserProfileViewSetTests(TestCase):
         viewset.request = Mock()
         viewset.request.privacy_level = MOZILLIANS
         user = UserFactory.create()
-        with patch('mozillians.users.api.v2.UserProfileDetailedSerializer') as serializer_mock:
+        with patch(
+            "mozillians.users.api.v2.UserProfileDetailedSerializer"
+        ) as serializer_mock:
             viewset.retrieve(None, user.userprofile.id)
 
         serializer_mock.assert_called_with(user.userprofile, context=ANY)
@@ -287,42 +309,48 @@ class UserProfileFilterTest(TestCase):
         self.factory = RequestFactory()
 
     def test_filter_emails_primary(self):
-        request = self.factory.get('/', {'email': 'foo@bar.com'})
-        user = UserFactory.create(email='foo@bar.com')
+        request = self.factory.get("/", {"email": "foo@bar.com"})
+        user = UserFactory.create(email="foo@bar.com")
         UserFactory.create_batch(2)
-        ExternalAccount.objects.create(user=user.userprofile, type=ExternalAccount.TYPE_EMAIL,
-                                       identifier='bar@bar.com')
+        ExternalAccount.objects.create(
+            user=user.userprofile,
+            type=ExternalAccount.TYPE_EMAIL,
+            identifier="bar@bar.com",
+        )
         f = UserProfileFilter(request.GET, queryset=UserProfile.objects.all())
         eq_(f.qs.count(), 1)
         eq_(f.qs[0], user.userprofile)
 
     def test_filter_emails_alternate_legacy(self):
-        request = self.factory.get('/', {'email': 'bar@bar.com'})
-        user = UserFactory.create(email='foo@bar.com')
+        request = self.factory.get("/", {"email": "bar@bar.com"})
+        user = UserFactory.create(email="foo@bar.com")
         UserFactory.create_batch(2)
-        ExternalAccount.objects.create(user=user.userprofile, type=ExternalAccount.TYPE_EMAIL,
-                                       identifier='bar@bar.com')
+        ExternalAccount.objects.create(
+            user=user.userprofile,
+            type=ExternalAccount.TYPE_EMAIL,
+            identifier="bar@bar.com",
+        )
         f = UserProfileFilter(request.GET, queryset=UserProfile.objects.all())
         eq_(f.qs.count(), 1)
         eq_(f.qs[0], user.userprofile)
 
     def test_filter_emails_alternate_idp(self):
-        request = self.factory.get('/', {'email': 'bar@bar.com'})
-        user = UserFactory.create(email='foo@bar.com')
+        request = self.factory.get("/", {"email": "bar@bar.com"})
+        user = UserFactory.create(email="foo@bar.com")
         UserFactory.create_batch(2)
         IdpProfile.objects.create(
             profile=user.userprofile,
-            auth0_user_id='ad|bar@bar.com',
-            email='bar@bar.com'
+            auth0_user_id="ad|bar@bar.com",
+            email="bar@bar.com",
         )
         f = UserProfileFilter(request.GET, queryset=UserProfile.objects.all())
         eq_(f.qs.count(), 1)
         eq_(f.qs[0], user.userprofile)
 
     def test_filter_group_member(self):
-        request = self.factory.get('/', {'group': 'bar'})
+        request = self.factory.get("/", {"group": "bar"})
         user = UserFactory.create()
-        group = GroupFactory.create(name='bar')
+        group = GroupFactory.create(name="bar")
         group.add_member(user.userprofile)
 
         f = UserProfileFilter(request.GET, queryset=UserProfile.objects.all())
@@ -330,9 +358,9 @@ class UserProfileFilterTest(TestCase):
         eq_(f.qs[0], user.userprofile)
 
     def test_filter_group_pending(self):
-        request = self.factory.get('/', {'group': 'bar'})
+        request = self.factory.get("/", {"group": "bar"})
         user = UserFactory.create()
-        group = GroupFactory.create(name='bar')
+        group = GroupFactory.create(name="bar")
         group.add_member(user.userprofile, GroupMembership.PENDING)
 
         f = UserProfileFilter(request.GET, queryset=UserProfile.objects.all())

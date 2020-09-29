@@ -1,31 +1,30 @@
-import urllib
-import urlparse
-
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime, timedelta
 from hashlib import md5
 
+import bleach
+import markdown as markdown_module
 from django.conf import settings
-from django.core.urlresolvers import reverse as django_reverse
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.http import HttpResponseRedirect
 from django.template.loader import get_template
+from django.urls import reverse as django_reverse
 from django.utils import six
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
-
-import bleach
-import markdown as markdown_module
+from django.utils.translation import ugettext as _
 from django_jinja import library
 from jinja2 import Markup, contextfunction
 from pytz import timezone, utc
 from sorl.thumbnail import get_thumbnail
-from django.utils.translation import ugettext as _
 
-from mozillians.common.urlresolvers import reverse
 from mozillians.common import utils
+from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import PUBLIC
 
-GRAVATAR_URL = 'https://secure.gravatar.com/avatar/{emaildigest}'
+GRAVATAR_URL = "https://secure.gravatar.com/avatar/{emaildigest}"
 
 
 @library.global_function
@@ -36,9 +35,9 @@ def absolutify(url):
 def _urlencode(items):
     """A Unicode-safe URLencoder."""
     try:
-        return urllib.urlencode(items)
+        return urllib.parse.urlencode(items)
     except UnicodeEncodeError:
-        return urllib.urlencode([(k, smart_str(v)) for k, v in items])
+        return urllib.parse.urlencode([(k, smart_str(v)) for k, v in items])
 
 
 @library.filter
@@ -48,21 +47,26 @@ def urlparams(url_, hash=None, **query):
     New query params will be appended to exising parameters, except duplicate
     names, which will be replaced.
     """
-    url = urlparse.urlparse(url_)
+    url = urllib.parse.urlparse(url_)
     fragment = hash if hash is not None else url.fragment
 
     # Use dict(parse_qsl) so we don't get lists of values.
     q = url.query
-    query_dict = dict(urlparse.parse_qsl(smart_str(q))) if q else {}
-    query_dict.update((k, v) for k, v in query.items())
+    query_dict = dict(urllib.parse.parse_qsl(smart_str(q))) if q else {}
+    query_dict.update((k, v) for k, v in list(query.items()))
 
-    query_string = _urlencode([(k, v) for k, v in query_dict.items() if v is not None])
-    new = urlparse.ParseResult(url.scheme, url.netloc, url.path, url.params,
-                               query_string, fragment)
+    query_string = _urlencode(
+        [(k, v) for k, v in list(query_dict.items()) if v is not None]
+    )
+    new = urllib.parse.ParseResult(
+        url.scheme, url.netloc, url.path, url.params, query_string, fragment
+    )
     return new.geturl()
 
 
-def gravatar(email, default_avatar_url=settings.DEFAULT_AVATAR_URL, size=175, rating='pg'):
+def gravatar(
+    email, default_avatar_url=settings.DEFAULT_AVATAR_URL, size=175, rating="pg"
+):
     """Return the Gravatar URL for an email address."""
     url = GRAVATAR_URL.format(emaildigest=md5(email).hexdigest())
     url = urlparams(url, d=default_avatar_url, s=size, r=rating)
@@ -76,8 +80,8 @@ def field_with_attrs(bfield, **kwargs):
 
     Copied from bedrock.
     """
-    if kwargs.get('label', None):
-        bfield.label = kwargs['label']
+    if kwargs.get("label", None):
+        bfield.label = kwargs["label"]
     bfield.field.widget.attrs.update(kwargs)
     return bfield
 
@@ -88,19 +92,24 @@ def mozillians_field(element, required=False):
 
     Takes a field and renders the appropriate elements.
     """
-    template = get_template('includes/field.html')
-    context = {'field': element, 'flag_required': required}
+    template = get_template("includes/field.html")
+    context = {"field": element, "flag_required": required}
 
     return mark_safe(template.render(context))
 
 
 @library.global_function
 def privacy_field(element):
-    element = field_with_attrs(element, **{'class': 'privacy-choice',
-                                           'data-privacy-original': element.value(),
-                                           'label': _('Visible to:')})
-    template = get_template('includes/field.html')
-    context = {'field': element, 'privacy': True}
+    element = field_with_attrs(
+        element,
+        **{
+            "class": "privacy-choice",
+            "data-privacy-original": element.value(),
+            "label": _("Visible to:"),
+        }
+    )
+    template = get_template("includes/field.html")
+    context = {"field": element, "privacy": True}
     return mark_safe(template.render(context))
 
 
@@ -110,8 +119,8 @@ def mozillians_form(element):
 
     Takes a form and renders the appropriate elements.
     """
-    template = get_template('includes/form.html')
-    context = {'form': element}
+    template = get_template("includes/form.html")
+    context = {"form": element}
 
     return mark_safe(template.render(context))
 
@@ -131,13 +140,28 @@ def redirect(to, *args, **kwargs):
 @library.filter
 def markdown(text, allowed_tags=None, allowed_attributes=None, allowed_styles=None):
     if not allowed_tags:
-        allowed_tags = ['p', 'em', 'li', 'ul', 'a', 'strong', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+        allowed_tags = [
+            "p",
+            "em",
+            "li",
+            "ul",
+            "a",
+            "strong",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+        ]
     if not allowed_attributes:
-        allowed_attributes = ['href']
+        allowed_attributes = ["href"]
     if not allowed_styles:
         allowed_styles = []
-    text = markdown_module.markdown(text, safe_mode='remove')
-    clean_text = bleach.clean(text, allowed_tags, allowed_attributes, allowed_styles, strip=True)
+    text = markdown_module.markdown(text, safe_mode="remove")
+    clean_text = bleach.clean(
+        text, allowed_tags, allowed_attributes, allowed_styles, strip=True
+    )
     return Markup(clean_text)
 
 
@@ -170,14 +194,14 @@ def display_context(context, include_callables=False):
 
     """
     if not settings.DEBUG:
-        return ''
+        return ""
     keys = sorted(context.keys())
     parts = [
-        '<dt>{key}</dt><dd>{value}</dd>'.format(key=key, value=repr(context[key]))
+        "<dt>{key}</dt><dd>{value}</dd>".format(key=key, value=repr(context[key]))
         for key in keys
         if include_callables or not callable(context[key])
     ]
-    html = '<dl class="jinja-context">{parts}</dl>'.format(parts=''.join(parts))
+    html = '<dl class="jinja-context">{parts}</dl>'.format(parts="".join(parts))
     return Markup(html)
 
 
@@ -217,12 +241,12 @@ def is_callable(thing):
 
 @library.filter
 def is_checkbox(field):
-    return field.field.widget.__class__.__name__.lower() == 'checkboxinput'
+    return field.field.widget.__class__.__name__.lower() == "checkboxinput"
 
 
 @library.filter
 def is_radio(field):
-    return field.field.widget.__class__.__name__.lower() == 'radioselect'
+    return field.field.widget.__class__.__name__.lower() == "radioselect"
 
 
 def aware_utcnow():
@@ -261,7 +285,7 @@ def get_datetime(days=0, weeks=0):
 
     The offset can be either positive or negative.
     """
-    return (datetime.today() + timedelta(days=days, weeks=weeks))
+    return datetime.today() + timedelta(days=days, weeks=weeks)
 
 
 def get_object_or_none(model_class, **kwargs):
@@ -315,7 +339,7 @@ def get_privacy_aware_photo_url(profile, privacy_level, geometry, **kwargs):
             return gravatar(profile.email, size=geometry)
         return profile.get_photo_thumbnail(geometry, **kwargs).url
 
-    profile.photo = ''
+    profile.photo = ""
     return profile.get_photo_thumbnail(geometry, **kwargs).url
 
 
@@ -325,7 +349,7 @@ def get_privacy_aware_photo_url(profile, privacy_level, geometry, **kwargs):
 @library.filter
 def ifeq(a, b, text):
     """Return ``text`` if ``a == b``."""
-    return Markup(text if a == b else '')
+    return Markup(text if a == b else "")
 
 
 @library.filter

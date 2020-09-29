@@ -1,11 +1,8 @@
-FROM python:2.7-slim
+FROM python:3.8-slim
 
 EXPOSE 8000
 WORKDIR /code
 CMD ["./bin/run-dev.sh"]
-
-# Workaround to pip 1.10 bug
-RUN pip install "pip<10"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

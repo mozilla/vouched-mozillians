@@ -22,9 +22,11 @@ class BaseProfileAdminAutocomplete(autocomplete.Select2QuerySetView):
             return UserProfile.objects.none()
 
         qs = UserProfile.objects.complete()
-        self.q_base_filter = (Q(full_name__icontains=self.q)
-                              | Q(user__email__icontains=self.q)
-                              | Q(user__username__icontains=self.q))
+        self.q_base_filter = (
+            Q(full_name__icontains=self.q)
+            | Q(user__email__icontains=self.q)
+            | Q(user__username__icontains=self.q)
+        )
 
         if self.q:
             qs = qs.filter(self.q_base_filter)
@@ -43,9 +45,11 @@ class UsersAdminAutocomplete(autocomplete.Select2QuerySetView):
             return User.objects.none()
 
         qs = User.objects.all()
-        self.q_base_filter = (Q(userprofile__full_name__icontains=self.q)
-                              | Q(email__icontains=self.q)
-                              | Q(username__icontains=self.q))
+        self.q_base_filter = (
+            Q(userprofile__full_name__icontains=self.q)
+            | Q(email__icontains=self.q)
+            | Q(username__icontains=self.q)
+        )
 
         if self.q:
             qs = qs.filter(self.q_base_filter)
@@ -53,7 +57,6 @@ class UsersAdminAutocomplete(autocomplete.Select2QuerySetView):
 
 
 class VoucherAutocomplete(BaseProfileAdminAutocomplete):
-
     def get_queryset(self):
         """Augment base queryset by returning only users who can vouch."""
         qs = super(VoucherAutocomplete, self).get_queryset().filter(can_vouch=True)
@@ -64,7 +67,6 @@ class VoucherAutocomplete(BaseProfileAdminAutocomplete):
 
 
 class VouchedAutocomplete(BaseProfileAdminAutocomplete):
-
     def get_queryset(self):
         """Augment base queryset by returning only vouched users."""
         qs = super(VouchedAutocomplete, self).get_queryset().vouched()
@@ -75,12 +77,11 @@ class VouchedAutocomplete(BaseProfileAdminAutocomplete):
 
 
 class StaffProfilesAutocomplete(autocomplete.Select2QuerySetView):
-
     def get_results(self, context):
         """Modify the text in the results of the group invitation form."""
 
         results = []
-        for result in context['object_list']:
+        for result in context["object_list"]:
             pk = self.get_result_value(result)
             if not pk:
                 continue
@@ -91,12 +92,9 @@ class StaffProfilesAutocomplete(autocomplete.Select2QuerySetView):
 
             # Append the email used for login in the autocomplete text
             if idp:
-                text += ' ({0})'.format(idp.email)
+                text += " ({0})".format(idp.email)
 
-            item = {
-                'id': pk,
-                'text': text
-            }
+            item = {"id": pk, "text": text}
             results.append(item)
         return results
 
@@ -108,15 +106,18 @@ class StaffProfilesAutocomplete(autocomplete.Select2QuerySetView):
 
         # Query staff profiles
         for domain in settings.AUTO_VOUCH_DOMAINS:
-            pks = IdpProfile.objects.filter(
-                email__endswith='@' + domain).values_list('profile__pk', flat=True)
+            pks = IdpProfile.objects.filter(email__endswith="@" + domain).values_list(
+                "profile__pk", flat=True
+            )
             queries.append(Q(pk__in=pks))
 
         query = reduce(or_, queries)
 
         qs = UserProfile.objects.filter(query).distinct()
         if self.q:
-            qs = qs.filter(Q(full_name__icontains=self.q)
-                           | Q(user__email__icontains=self.q)
-                           | Q(user__username__icontains=self.q))
+            qs = qs.filter(
+                Q(full_name__icontains=self.q)
+                | Q(user__email__icontains=self.q)
+                | Q(user__username__icontains=self.q)
+            )
         return qs

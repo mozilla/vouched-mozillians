@@ -15,45 +15,46 @@ from mozillians.users.models import ExternalAccount, IdpProfile, Language, UserP
 
 # Serializers
 
+
 class ExternalAccountSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='get_type_display')
-    privacy = serializers.CharField(source='get_privacy_display')
+    name = serializers.CharField(source="get_type_display")
+    privacy = serializers.CharField(source="get_privacy_display")
 
     class Meta:
         model = ExternalAccount
-        fields = ('type', 'identifier', 'privacy', 'name')
+        fields = ("type", "identifier", "privacy", "name")
 
     def to_representation(self, instance):
         result = super(ExternalAccountSerializer, self).to_representation(instance)
-        result['type'] = result['type'].lower()
+        result["type"] = result["type"].lower()
         return result
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
-    website = serializers.CharField(source='identifier')
-    privacy = serializers.CharField(source='get_privacy_display')
+    website = serializers.CharField(source="identifier")
+    privacy = serializers.CharField(source="get_privacy_display")
 
     class Meta:
         model = ExternalAccount
-        fields = ('website', 'privacy')
+        fields = ("website", "privacy")
 
 
 class LanguageSerializer(serializers.ModelSerializer):
-    english = serializers.CharField(source='get_english')
-    native = serializers.CharField(source='get_native')
+    english = serializers.CharField(source="get_english")
+    native = serializers.CharField(source="get_native")
 
     class Meta:
         model = Language
-        fields = ('code', 'english', 'native')
+        fields = ("code", "english", "native")
 
 
 class AlternateEmailSerializer(serializers.Serializer):
     email = serializers.SerializerMethodField()
-    privacy = serializers.CharField(source='get_privacy_display')
+    privacy = serializers.CharField(source="get_privacy_display")
 
     class Meta:
         model = ExternalAccount
-        fields = ('email', 'privacy')
+        fields = ("email", "privacy")
 
     def get_email(self, obj):
         if isinstance(obj, ExternalAccount):
@@ -67,27 +68,29 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Group
-        fields = ('name', '_url')
+        fields = ("name", "_url")
 
 
 class UserProfileSerializer(serializers.HyperlinkedModelSerializer):
-    username = serializers.ReadOnlyField(source='user.username')
+    username = serializers.ReadOnlyField(source="user.username")
 
     class Meta:
         model = UserProfile
-        fields = ('username', 'is_vouched', '_url')
+        fields = ("username", "is_vouched", "_url")
 
 
 class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
-    username = serializers.ReadOnlyField(source='user.username')
+    username = serializers.ReadOnlyField(source="user.username")
     email = serializers.ReadOnlyField()
     photo = serializers.SerializerMethodField()
-    alternate_emails = AlternateEmailSerializer(many=True, source='_api_alternate_emails')
-    groups = GroupSerializer(many=True, source='_groups')
+    alternate_emails = AlternateEmailSerializer(
+        many=True, source="_api_alternate_emails"
+    )
+    groups = GroupSerializer(many=True, source="_groups")
     country = serializers.SerializerMethodField()
     region = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
-    external_accounts = ExternalAccountSerializer(many=True, source='accounts')
+    external_accounts = ExternalAccountSerializer(many=True, source="accounts")
     languages = LanguageSerializer(many=True)
     websites = WebsiteSerializer(many=True)
     is_public = serializers.ReadOnlyField()
@@ -96,18 +99,39 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
     # Add profile URL
     class Meta:
         model = UserProfile
-        fields = ('username', 'full_name', 'email', 'alternate_emails', 'groups', 'bio', 'photo',
-                  'ircname', 'date_mozillian', 'timezone', 'title', 'story_link', 'languages',
-                  'external_accounts', 'websites', 'tshirt', 'is_public', 'is_vouched',
-                  '_url', 'url', 'city', 'region', 'country')
+        fields = (
+            "username",
+            "full_name",
+            "email",
+            "alternate_emails",
+            "groups",
+            "bio",
+            "photo",
+            "ircname",
+            "date_mozillian",
+            "timezone",
+            "title",
+            "story_link",
+            "languages",
+            "external_accounts",
+            "websites",
+            "tshirt",
+            "is_public",
+            "is_vouched",
+            "_url",
+            "url",
+            "city",
+            "region",
+            "country",
+        )
 
     def _transform_privacy_wrapper(self, field):
-
         def _transform_privacy(obj, value):
             return {
-                'value': value,
-                'privacy': getattr(obj, 'get_privacy_{0}_display'.format(field))()
+                "value": value,
+                "privacy": getattr(obj, "get_privacy_{0}_display".format(field))(),
             }
+
         return _transform_privacy
 
     def __init__(self, *args, **kwargs):
@@ -117,83 +141,85 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
         # field has a privacy setting, set the transform privacy
         # wrapper.
 
-        for field in self.fields.keys():
-            method_name = 'transform_{0}'.format(field)
+        for field in list(self.fields.keys()):
+            method_name = "transform_{0}".format(field)
 
             # Exclude `country`, `region`, `city` because they collide with the
             # field aliases for `geo_country`, `geo_city`, `geo_region`
-            if field in ['country', 'region', 'city']:
+            if field in ["country", "region", "city"]:
                 return None
 
-            if ((not getattr(self, method_name, None)
-                 and getattr(UserProfile, 'get_privacy_{0}_display'.format(field), None))):
+            if not getattr(self, method_name, None) and getattr(
+                UserProfile, "get_privacy_{0}_display".format(field), None
+            ):
                 setattr(self, method_name, self._transform_privacy_wrapper(field))
 
     def get_url(self, obj):
-        return absolutify(reverse('phonebook:profile_view',
-                                  kwargs={'username': obj.user.username}))
+        return absolutify(
+            reverse("phonebook:profile_view", kwargs={"username": obj.user.username})
+        )
 
     def transform_timezone(self, obj, value):
         return {
-            'value': value,
-            'utc_offset': obj.timezone_offset(),
-            'privacy': obj.get_privacy_timezone_display(),
+            "value": value,
+            "utc_offset": obj.timezone_offset(),
+            "privacy": obj.get_privacy_timezone_display(),
         }
 
     def transform_bio(self, obj, value):
         return {
-            'value': value,
-            'html': unicode(markdown(value)), # noqa
-            'privacy': obj.get_privacy_bio_display(),
+            "value": value,
+            "html": str(markdown(value)),  # noqa
+            "privacy": obj.get_privacy_bio_display(),
         }
 
     def get_photo(self, obj):
         return {
-            'value': obj.get_photo_url('300x300'),
-            '150x150': obj.get_photo_url('150x150'),
-            '300x300': obj.get_photo_url('300x300'),
-            '500x500': obj.get_photo_url('500x500'),
+            "value": obj.get_photo_url("300x300"),
+            "150x150": obj.get_photo_url("150x150"),
+            "300x300": obj.get_photo_url("300x300"),
+            "500x500": obj.get_photo_url("500x500"),
         }
 
     def transform_photo(self, obj, value):
-        privacy_field = {'privacy': obj.get_privacy_photo_display()}
+        privacy_field = {"privacy": obj.get_privacy_photo_display()}
         value.update(privacy_field)
         return value
 
     def transform_tshirt(self, obj, value):
         return {
-            'value': obj.tshirt,
-            'english': obj.get_tshirt_display(),
-            'privacy': obj.get_privacy_tshirt_display(),
+            "value": obj.tshirt,
+            "english": obj.get_tshirt_display(),
+            "privacy": obj.get_privacy_tshirt_display(),
         }
 
     def get_country(self, obj):
         country = obj.country
         return {
-            'code': country.code2 if country else '',
-            'value': country.name if country else '',
-            'privacy': obj.get_privacy_country_display(),
+            "code": country.code2 if country else "",
+            "value": country.name if country else "",
+            "privacy": obj.get_privacy_country_display(),
         }
 
     def get_region(self, obj):
         region = obj.region
         return {
-            'value': region.name if region else '',
-            'privacy': obj.get_privacy_region_display(),
+            "value": region.name if region else "",
+            "privacy": obj.get_privacy_region_display(),
         }
 
     def get_city(self, obj):
         city = obj.city
         return {
-            'value': city.name if city else '',
-            'privacy': obj.get_privacy_city_display(),
+            "value": city.name if city else "",
+            "privacy": obj.get_privacy_city_display(),
         }
 
     def to_representation(self, instance):
         result = super(UserProfileDetailedSerializer, self).to_representation(instance)
 
-        for key, value in result.items():
-            method = getattr(self, 'transform_{}'.format(key), None)
+        for key, value in list(result.items()):
+            method = getattr(self, "transform_{}".format(key), None)
             if method is not None:
                 result[key] = method(self.instance, value)
 
@@ -202,36 +228,46 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
 
 # Filters
 class UserProfileFilter(django_filters.FilterSet):
-    city = django_filters.CharFilter(name='city__name')
-    region = django_filters.CharFilter(name='region__name')
-    country = django_filters.CharFilter(name='country__name')
-    country_code = django_filters.CharFilter(name='country__code2')
-    username = django_filters.CharFilter(name='user__username')
-    email = django_filters.CharFilter(method='filter_emails')
-    language = django_filters.CharFilter(name='language__code')
-    account = django_filters.CharFilter(name='externalaccount__identifier', distinct=True)
-    group = django_filters.CharFilter(method='filter_group')
-    skill = django_filters.CharFilter(name='skills__name')
+    city = django_filters.CharFilter(name="city__name")
+    region = django_filters.CharFilter(name="region__name")
+    country = django_filters.CharFilter(name="country__name")
+    country_code = django_filters.CharFilter(name="country__code2")
+    username = django_filters.CharFilter(name="user__username")
+    email = django_filters.CharFilter(method="filter_emails")
+    language = django_filters.CharFilter(name="language__code")
+    account = django_filters.CharFilter(
+        name="externalaccount__identifier", distinct=True
+    )
+    group = django_filters.CharFilter(method="filter_group")
+    skill = django_filters.CharFilter(name="skills__name")
 
     class Meta:
         model = UserProfile
-        fields = ('is_vouched', 'city', 'region', 'country', 'country_code',
-                  'username', 'email', 'ircname', 'full_name',
-                  'account', 'group', 'skill')
+        fields = (
+            "is_vouched",
+            "city",
+            "region",
+            "country",
+            "country_code",
+            "username",
+            "email",
+            "ircname",
+            "full_name",
+            "account",
+            "group",
+            "skill",
+        )
 
     def filter_emails(self, queryset, name, value):
         """Return users with email matching either primary or alternate email address"""
         legacy_qs = ExternalAccount.objects.filter(
-            type=ExternalAccount.TYPE_EMAIL,
-            identifier=value
+            type=ExternalAccount.TYPE_EMAIL, identifier=value
         )
 
-        idp_qs = IdpProfile.objects.filter(
-            email=value
-        )
+        idp_qs = IdpProfile.objects.filter(email=value)
 
-        legacy_users = legacy_qs.values_list('user__id', flat=True)
-        idp_users = idp_qs.values_list('profile__id', flat=True)
+        legacy_users = legacy_qs.values_list("user__id", flat=True)
+        idp_users = idp_qs.values_list("profile__id", flat=True)
         query = Q(id__in=legacy_users) | Q(id__in=idp_users) | Q(user__email=value)
         return queryset.filter(query).distinct()
 
@@ -246,10 +282,11 @@ class UserProfileViewSet(NoCacheReadOnlyModelViewSet):
     Returns a list of Mozillians respecting authorization levels
     and privacy settings.
     """
+
     serializer_class = UserProfileSerializer
     model = UserProfile
     filter_class = UserProfileFilter
-    ordering = ('user__username',)
+    ordering = ("user__username",)
 
     def get_queryset(self):
         queryset = UserProfile.objects.complete()
@@ -263,7 +300,10 @@ class UserProfileViewSet(NoCacheReadOnlyModelViewSet):
     def retrieve(self, request, pk):
         user = get_object_or_404(self.get_queryset(), pk=pk)
         group_ids = user.groupmembership_set.filter(
-            status=GroupMembership.MEMBER).values_list('group_id', flat=True)
+            status=GroupMembership.MEMBER
+        ).values_list("group_id", flat=True)
         user._groups = Group.objects.filter(id__in=group_ids)
-        serializer = UserProfileDetailedSerializer(user, context={'request': self.request})
+        serializer = UserProfileDetailedSerializer(
+            user, context={"request": self.request}
+        )
         return Response(serializer.data)

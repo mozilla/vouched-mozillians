@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 import operator
 from datetime import datetime
 
 from django.db import models, migrations
 from django.conf import settings
+from functools import reduce
 
 
 def vouch_mozilla_alternate_emails(apps, schema_editor):

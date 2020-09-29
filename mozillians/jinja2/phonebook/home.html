@@ -4,7 +4,7 @@
 {% block body_id %}home{% endblock %}
 
 {% block mosaic %}
-{% if not user.is_authenticated() %}
+{% if not user.is_authenticated %}
   {% include 'phonebook/includes/mosaic.html' %}
 {% endif %}
 {% endblock mosaic %}

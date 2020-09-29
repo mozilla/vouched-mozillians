@@ -15,39 +15,47 @@ from mozillians.common.tests import TestCase
 
 class HelperTests(TestCase):
     def setUp(self):
-        self.env = engines['jinja2']
+        self.env = engines["jinja2"]
 
     def test_gravatar(self):
-        avatar_url = helpers.gravatar('fo', size=80, rating='bar')
-        eq_(avatar_url, ('https://secure.gravatar.com/avatar/eed8070249'
-                         '39b808083f0031a56e9872?s=80&r=bar&d='
-                         '%2Fmedia%2Fimg%2Fdefault_avatar.png'))
+        avatar_url = helpers.gravatar("fo", size=80, rating="bar")
+        eq_(
+            avatar_url,
+            (
+                "https://secure.gravatar.com/avatar/eed8070249"
+                "39b808083f0031a56e9872?s=80&r=bar&d="
+                "%2Fmedia%2Fimg%2Fdefault_avatar.png"
+            ),
+        )
 
-    @patch('mozillians.common.templatetags.helpers.markdown_module.markdown', wraps=markdown)
-    @patch('mozillians.common.templatetags.helpers.bleach.clean', wraps=clean)
+    @patch(
+        "mozillians.common.templatetags.helpers.markdown_module.markdown",
+        wraps=markdown,
+    )
+    @patch("mozillians.common.templatetags.helpers.bleach.clean", wraps=clean)
     def test_markdown(self, clean_mock, markdown_mock):
-        returned_text = helpers.markdown('***foo***', allowed_tags=['strong'])
-        eq_(returned_text, '<strong>foo</strong>')
+        returned_text = helpers.markdown("***foo***", allowed_tags=["strong"])
+        eq_(returned_text, "<strong>foo</strong>")
         ok_(clean_mock.called)
         ok_(markdown_mock.called)
 
     @override_settings(DEBUG=True)
     def test_display_context(self):
         # With DEBUG on,  display_context() inserts the values of context vars
-        t = self.env.from_string('START{{ display_context() }}END')
-        c = {'testkey': 'testvalue'}
+        t = self.env.from_string("START{{ display_context() }}END")
+        c = {"testkey": "testvalue"}
         s = t.render(c)
-        ok_('START<dl' in s)
-        ok_('</dl>END' in s)
+        ok_("START<dl" in s)
+        ok_("</dl>END" in s)
         ok_("<dt>testkey</dt><dd>'testvalue'</dd>" in s)
 
     @override_settings(DEBUG=False)
     def test_display_context_production(self):
         # With DEBUG off, display_context() is empty
-        t = self.env.from_string('START{{ display_context() }}END')
-        c = {'testkey': 'testvalue'}
+        t = self.env.from_string("START{{ display_context() }}END")
+        c = {"testkey": "testvalue"}
         s = t.render(c)
-        eq_('STARTEND', s)
+        eq_("STARTEND", s)
 
 
 class TimezoneHelpers(TestCase):
@@ -66,19 +74,23 @@ class TimezoneHelpers(TestCase):
         # Construct a time in UTC that will be "now"
         utc_time = datetime(1972, 1, 1, 12, 4, 5).replace(tzinfo=utc)
         tz_name = "US/Eastern"  # 5 hours difference from UTC on 1/1/1972
-        with patch('mozillians.common.templatetags.helpers.aware_utcnow') as mock_aware_now:
+        with patch(
+            "mozillians.common.templatetags.helpers.aware_utcnow"
+        ) as mock_aware_now:
             mock_aware_now.return_value = utc_time
             result = helpers.now_in_timezone(tz_name)
         ok_(is_aware(result))
         fmt_time = result.strftime("%H:%M %Z")
-        eq_('07:04 EST', fmt_time)
+        eq_("07:04 EST", fmt_time)
 
     def test_offset_of_timezone(self):
         # offset_of_timezone returns the offset in minutes of the named timezone as of now
         # Construct a time in UTC that will be "now"
         utc_time = datetime(1972, 1, 1, 3, 4, 5).replace(tzinfo=utc)
         tz_name = "US/Eastern"  # 5 hours difference from UTC on 1/1/1972
-        with patch('mozillians.common.templatetags.helpers.aware_utcnow') as mock_aware_now:
+        with patch(
+            "mozillians.common.templatetags.helpers.aware_utcnow"
+        ) as mock_aware_now:
             mock_aware_now.return_value = utc_time
             result = helpers.offset_of_timezone(tz_name)
         eq_(-300, result)

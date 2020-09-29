@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 import sorl.thumbnail.fields
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 ('phone', models.CharField(default=b'', max_length=100, blank=True)),
                 ('email', models.EmailField(default=b'', max_length=75, blank=True)),
                 ('extra_text', models.TextField(default=b'', blank=True)),
-                ('coordinator', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('coordinator', models.ForeignKey(on_delete=models.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
             },
@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('photofile', sorl.thumbnail.fields.ImageField(upload_to=mozillians.mozspaces.models._calculate_photo_filename)),
-                ('mozspace', models.ForeignKey(related_name='photos', to='mozspaces.MozSpace')),
+                ('mozspace', models.ForeignKey(on_delete=models.CASCADE, related_name='photos', to='mozspaces.MozSpace')),
             ],
             options={
             },
@@ -59,13 +59,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mozspace',
             name='cover_photo',
-            field=models.ForeignKey(related_name='featured_mozspace', blank=True, to='mozspaces.Photo', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, related_name='featured_mozspace', blank=True, to='mozspaces.Photo', null=True),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='keyword',
             name='mozspace',
-            field=models.ForeignKey(related_name='keywords', to='mozspaces.MozSpace'),
+            field=models.ForeignKey(on_delete=models.CASCADE, related_name='keywords', to='mozspaces.MozSpace'),
             preserve_default=True,
         ),
     ]

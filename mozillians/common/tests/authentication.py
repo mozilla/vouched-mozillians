@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 
 
-class DummyAuthenticationBackend():
+class DummyAuthenticationBackend:
     supports_inactive_user = True
 
     def authenticate(self, email=None):

@@ -10,8 +10,8 @@ class TestCase(BaseTestCase):
 
 
 class AnnouncementFactory(factory.DjangoModelFactory):
-    title = factory.Sequence(lambda n: 'Test Announcement {0}'.format(n))
-    text = factory.Sequence(lambda n: 'Text for Announcement {0}'.format(n))
+    title = factory.Sequence(lambda n: "Test Announcement {0}".format(n))
+    text = factory.Sequence(lambda n: "Text for Announcement {0}".format(n))
 
     class Meta:
         model = models.Announcement
