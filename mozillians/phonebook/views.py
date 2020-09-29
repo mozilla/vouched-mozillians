@@ -89,7 +89,7 @@ def edit_profile(request):
         'basic_section': ['user_form', 'basic_information_form'],
     }
 
-    curr_sect = next((s for s in sections.keys() if s in request.POST), None)
+    curr_sect = next((s for s in list(sections.keys()) if s in request.POST), None)
 
     def get_request_data(form):
         if curr_sect and form in sections[curr_sect]:
@@ -107,8 +107,8 @@ def edit_profile(request):
     if request.POST:
         if not curr_sect:
             raise Http404
-        curr_forms = map(lambda x: ctx[x], sections[curr_sect])
-        forms_valid = all(map(lambda x: x.is_valid(), curr_forms))
+        curr_forms = [ctx[x] for x in sections[curr_sect]]
+        forms_valid = all([x.is_valid() for x in curr_forms])
         if forms_valid:
             old_username = request.user.username
             for f in curr_forms:
@@ -117,8 +117,8 @@ def edit_profile(request):
             next_section = request.GET.get('next')
             next_url = urlparams(reverse('phonebook:profile_edit'), next_section)
             if user.username != old_username:
-                msg = _(u'You changed your username; '
-                        u'please note your profile URL has also changed.')
+                msg = _('You changed your username; '
+                        'please note your profile URL has also changed.')
                 messages.info(request, _(msg))
             return HttpResponseRedirect(next_url)
 
@@ -147,12 +147,12 @@ def delete_identity(request, identity_pk):
     if idp_query.exists():
         idp_type = idp_query[0].get_type_display()
         idp_query.delete()
-        msg = _(u'Identity {0} successfully deleted.'.format(idp_type))
+        msg = _('Identity {0} successfully deleted.'.format(idp_type))
         messages.success(request, msg)
         return redirect('phonebook:profile_edit')
 
     # We are trying to delete the primary identity, politely ignore the request
-    msg = _(u'Sorry the requested Identity cannot be deleted.')
+    msg = _('Sorry the requested Identity cannot be deleted.')
     messages.error(request, msg)
     return redirect('phonebook:profile_edit')
 

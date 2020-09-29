@@ -12,7 +12,7 @@ class LanguageCodeToNameTests(TestCase):
         """Test the name of a language with valid language code."""
         activate('fr')
         name = langcode_to_name('en')
-        eq_(name, u'Anglais')
+        eq_(name, 'Anglais')
 
     def test_invalid_code(self):
         """Test the language name with invalid language code."""

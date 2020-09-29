@@ -13,4 +13,4 @@ class GetTranslatedLanguagesTests(TestCase):
 
     def test_valid_locale(self):
         get_languages_for_locale('en')
-        self.assertIn('en', AVAILABLE_LANGUAGES.keys())
+        self.assertIn('en', list(AVAILABLE_LANGUAGES.keys()))

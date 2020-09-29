@@ -1,5 +1,5 @@
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from contextlib import contextmanager
 
 from django.conf import settings
@@ -10,8 +10,8 @@ from django.utils.translation import ugettext_lazy as _lazy
 
 from mozillians.common import urlresolvers
 
-LOGIN_MESSAGE = _lazy(u'You must be logged in to continue.')
-GET_VOUCHED_MESSAGE = _lazy(u'You must be vouched to continue.')
+LOGIN_MESSAGE = _lazy('You must be logged in to continue.')
+GET_VOUCHED_MESSAGE = _lazy('You must be vouched to continue.')
 
 
 @contextmanager
@@ -55,7 +55,7 @@ class LocaleURLMiddleware(object):
 
         if full_path != request.path:
             query_string = request.META.get('QUERY_STRING', '')
-            full_path = urllib.quote(full_path.encode('utf-8'))
+            full_path = urllib.parse.quote(full_path.encode('utf-8'))
 
             if query_string:
                 full_path = '%s?%s' % (full_path, query_string)

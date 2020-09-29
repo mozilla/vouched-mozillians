@@ -1,4 +1,4 @@
-from __future__ import with_statement, unicode_literals
+
 
 from django.core.files.base import ContentFile
 from django.utils.safestring import mark_safe

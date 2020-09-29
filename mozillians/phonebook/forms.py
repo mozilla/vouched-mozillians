@@ -19,7 +19,7 @@ class UserForm(happyforms.ModelForm):
     Profile.
 
     """
-    username = forms.CharField(label=_lazy(u'Username'))
+    username = forms.CharField(label=_lazy('Username'))
 
     class Meta:
         model = User
@@ -35,17 +35,17 @@ class UserForm(happyforms.ModelForm):
         # happen is bad UI.
         if (User.objects.filter(username=username).
                 exclude(pk=self.instance.id).exists()):
-            raise forms.ValidationError(_(u'This username is in use. Please try'
-                                          u' another.'))
+            raise forms.ValidationError(_('This username is in use. Please try'
+                                          ' another.'))
 
         # No funky characters in username.
         if not re.match(r'^[\w.@+-]+$', username):
-            raise forms.ValidationError(_(u'Please use only alphanumeric'
-                                          u' characters'))
+            raise forms.ValidationError(_('Please use only alphanumeric'
+                                          ' characters'))
 
         if not validate_username(username):
-            raise forms.ValidationError(_(u'This username is not allowed, '
-                                          u'please choose another.'))
+            raise forms.ValidationError(_('This username is not allowed, '
+                                          'please choose another.'))
         return username
 
 

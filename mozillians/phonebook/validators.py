@@ -59,7 +59,7 @@ def validate_website(url):
     validate_url = URLValidator()
 
     if url and '://' not in url:
-        url = u'http://%s' % url
+        url = 'http://%s' % url
 
     try:
         validate_url(url)

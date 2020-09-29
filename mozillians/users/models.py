@@ -97,7 +97,7 @@ class UserProfilePrivacyModel(models.Model):
                 privacy_fields[name] = default
             # HACK: There's not really an email field on UserProfile,
             # but it's faked with a property
-            privacy_fields['email'] = u''
+            privacy_fields['email'] = ''
 
             cls.CACHED_PRIVACY_FIELDS = privacy_fields
         return cls.CACHED_PRIVACY_FIELDS
@@ -108,7 +108,7 @@ class UserProfile(UserProfilePrivacyModel):
 
     user = models.OneToOneField(User)
     full_name = models.CharField(max_length=255, default='', blank=False,
-                                 verbose_name=_lazy(u'Full Name'))
+                                 verbose_name=_lazy('Full Name'))
     is_vouched = models.BooleanField(
         default=False,
         help_text='You can edit vouched status by editing invidual vouches')
@@ -439,7 +439,7 @@ class IdpProfile(models.Model):
         profile.save()
 
     def __unicode__(self):
-        return u'{}|{}|{}'.format(self.profile, self.type, self.email)
+        return '{}|{}|{}'.format(self.profile, self.type, self.email)
 
     class Meta:
         unique_together = ('profile', 'type', 'email')
@@ -450,7 +450,7 @@ class Vouch(models.Model):
     voucher = models.ForeignKey(UserProfile, related_name='vouches_made',
                                 null=True, default=None, blank=True,
                                 on_delete=models.SET_NULL)
-    description = models.TextField(max_length=500, verbose_name=_lazy(u'Reason for Vouching'),
+    description = models.TextField(max_length=500, verbose_name=_lazy('Reason for Vouching'),
                                    default='')
     autovouch = models.BooleanField(default=False)
     date = models.DateTimeField()
@@ -461,7 +461,7 @@ class Vouch(models.Model):
         ordering = ['-date']
 
     def __unicode__(self):
-        return u'{0} vouched by {1}'.format(self.vouchee, self.voucher)
+        return '{0} vouched by {1}'.format(self.vouchee, self.voucher)
 
 
 class UsernameBlacklist(models.Model):
@@ -496,11 +496,11 @@ class ExternalAccount(models.Model):
     }
 
     user = models.ForeignKey(UserProfile)
-    identifier = models.CharField(max_length=255, verbose_name=_lazy(u'Account Username'))
+    identifier = models.CharField(max_length=255, verbose_name=_lazy('Account Username'))
     type = models.CharField(max_length=30,
-                            choices=sorted([(k, v['name']) for (k, v) in ACCOUNT_TYPES.iteritems()
+                            choices=sorted([(k, v['name']) for (k, v) in ACCOUNT_TYPES.items()
                                             if k != TYPE_EMAIL], key=lambda x: x[1]),
-                            verbose_name=_lazy(u'Account Type'))
+                            verbose_name=_lazy('Account Type'))
     privacy = models.PositiveIntegerField(default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE)
 
     class Meta:

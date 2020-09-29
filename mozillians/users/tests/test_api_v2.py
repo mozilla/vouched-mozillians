@@ -51,7 +51,7 @@ class LanguageSerializerTests(TestCase):
         data = serializer.data
         eq_(data, {'code': 'el',
                    'english': 'Greek',
-                   'native': u'Ελληνικά'})
+                   'native': 'Ελληνικά'})
 
 
 class UserProfileSerializerTests(TestCase):

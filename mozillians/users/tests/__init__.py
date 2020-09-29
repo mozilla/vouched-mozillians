@@ -36,7 +36,7 @@ class UserFactory(factory.DjangoModelFactory):
         self.userprofile.lat = 39.727924
         self.userprofile.lng = 21.592328
         if extracted:
-            for key, value in extracted.items():
+            for key, value in list(extracted.items()):
                 setattr(self.userprofile, key, value)
         self.userprofile.save()
 

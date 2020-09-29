@@ -15,7 +15,7 @@ PARAGRAPH_RE = re.compile(r'(?:\r\n|\r|\n){2,}')
 
 @library.filter
 def paragraphize(value):
-    return jinja2.Markup(u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', '<br>\n')
+    return jinja2.Markup('\n\n'.join('<p>%s</p>' % p.replace('\n', '<br>\n')
                                       for p in PARAGRAPH_RE.split(jinja2.escape(value))))
 
 
@@ -23,7 +23,7 @@ def paragraphize(value):
 @library.global_function
 @library.render_with('includes/search_result.html')
 def search_result(context, result):
-    d = dict(context.items())
+    d = dict(list(context.items()))
     d.update(result=result)
     return d
 

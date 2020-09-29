@@ -562,11 +562,11 @@ class ExternalAccountTests(TestCase):
     def test_get_url_unicode(self):
         profile = UserFactory.create().userprofile
         account = profile.externalaccount_set.create(type=ExternalAccount.TYPE_MDN,
-                                                     identifier=u'sammyウ')
+                                                     identifier='sammyウ')
         ok_('%E3%82%A6' in account.get_identifier_url())
 
     def test_urls_contain_identifiers(self):
-        for value, account in ExternalAccount.ACCOUNT_TYPES.iteritems():
+        for value, account in ExternalAccount.ACCOUNT_TYPES.items():
             if account['url']:
                 ok_('{identifier}' in account['url'])
 
@@ -689,10 +689,10 @@ class CISHelperMethodsTests(unittest.TestCase):
 
         expected_result = [
             {
-                'value': u'foo@bar.com',
+                'value': 'foo@bar.com',
                 'verified': True,
                 'primary': True,
-                'name': u'Github Provider'
+                'name': 'Github Provider'
             }
         ]
         eq_(profile.get_cis_emails(), expected_result)

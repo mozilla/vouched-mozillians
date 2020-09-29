@@ -3,12 +3,12 @@
 # Django settings for the mozillians project.
 import json
 import os.path
+from urllib.parse import urljoin
 
 from decouple import Csv, config
 from dj_database_url import parse as db_url
 from django_jinja.builtins import DEFAULT_EXTENSIONS
 from unipath import Path
-from urlparse import urljoin
 
 PROJECT_MODULE = 'mozillians'
 # Root path of the project
@@ -279,8 +279,8 @@ OIDC_PROMPT = 'select_account'
 OIDC_ACCOUNT_LINKING = 'true'
 OIDC_CREATE_USER = False
 OIDC_EXEMPT_URLS = [
-    u'/verify/identity/',
-    u'/verify/identity/callback/',
+    '/verify/identity/',
+    '/verify/identity/callback/',
 ]
 OIDC_RP_SCOPES = 'openid email profile'
 

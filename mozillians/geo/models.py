@@ -40,7 +40,7 @@ class Region(models.Model):
         )
 
     def __unicode__(self):
-        return u'%s, %s' % (self.name, self.country.name)
+        return '%s, %s' % (self.name, self.country.name)
 
 
 class City(models.Model):
@@ -68,4 +68,4 @@ class City(models.Model):
         )
 
     def __unicode__(self):
-        return u', '.join([x.name for x in self, self.region, self.country if x])
+        return ', '.join([x.name for x in (self, self.region, self.country) if x])

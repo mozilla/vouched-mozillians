@@ -117,7 +117,7 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
         # field has a privacy setting, set the transform privacy
         # wrapper.
 
-        for field in self.fields.keys():
+        for field in list(self.fields.keys()):
             method_name = 'transform_{0}'.format(field)
 
             # Exclude `country`, `region`, `city` because they collide with the
@@ -143,7 +143,7 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
     def transform_bio(self, obj, value):
         return {
             'value': value,
-            'html': unicode(markdown(value)), # noqa
+            'html': str(markdown(value)), # noqa
             'privacy': obj.get_privacy_bio_display(),
         }
 
@@ -192,7 +192,7 @@ class UserProfileDetailedSerializer(serializers.HyperlinkedModelSerializer):
     def to_representation(self, instance):
         result = super(UserProfileDetailedSerializer, self).to_representation(instance)
 
-        for key, value in result.items():
+        for key, value in list(result.items()):
             method = getattr(self, 'transform_{}'.format(key), None)
             if method is not None:
                 result[key] = method(self.instance, value)

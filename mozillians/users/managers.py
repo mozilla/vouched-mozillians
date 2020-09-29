@@ -9,11 +9,11 @@ PRIVATE = 1
 EMPLOYEES = 2
 MOZILLIANS = 3
 PUBLIC = 4
-PRIVACY_CHOICES = ((MOZILLIANS, _lazy(u'Mozillians')),
-                   (PUBLIC, _lazy(u'Public')))
-PRIVACY_CHOICES_WITH_PRIVATE = ((MOZILLIANS, _lazy(u'Mozillians')),
-                                (PUBLIC, _lazy(u'Public')),
-                                (PRIVATE, _lazy(u'Private')))
+PRIVACY_CHOICES = ((MOZILLIANS, _lazy('Mozillians')),
+                   (PUBLIC, _lazy('Public')))
+PRIVACY_CHOICES_WITH_PRIVATE = ((MOZILLIANS, _lazy('Mozillians')),
+                                (PUBLIC, _lazy('Public')),
+                                (PRIVATE, _lazy('Private')))
 
 PUBLIC_INDEXABLE_FIELDS = ['full_name', 'ircname', 'email']
 
@@ -49,7 +49,7 @@ class UserProfileValuesIterable(ValuesIterable):
             for levelindex, fieldindex, field in privacy_fields:
                 if row[levelindex] < queryset._privacy_level:
                     row[fieldindex] = model_privacy_fields[field]
-            yield dict(zip(names, row))
+            yield dict(list(zip(names, row)))
 
 
 class UserProfileModelIterable(ModelIterable):
@@ -59,7 +59,7 @@ class UserProfileModelIterable(ModelIterable):
         def _generator():
             self._iterator = super(UserProfileModelIterable, self).__iter__()
             while True:
-                obj = self._iterator.next()
+                obj = next(self._iterator)
                 obj._privacy_level = getattr(self.queryset, '_privacy_level', None)
                 yield obj
         return _generator()

@@ -59,4 +59,4 @@ class Command(BaseCommand):
                         )
                     count = count + 1
 
-        print("%d former staff members vouched." % count)
+        print(("%d former staff members vouched." % count))

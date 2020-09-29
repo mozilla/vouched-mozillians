@@ -30,7 +30,7 @@ class ProfileEditTests(TestCase):
         eq_(response.status_code, 200)
         with override_script_prefix('/en-US/'):
             groups_url = reverse('groups:index_groups')
-        ok_(groups_url in unicode(response.content, 'utf-8'))
+        ok_(groups_url in str(response.content, 'utf-8'))
 
     def test_profile_edit_unvouched_doesnt_link_to_groups_page(self):
         """An unvouched user editing their profile is not shown a link to the groups page.
@@ -43,7 +43,7 @@ class ProfileEditTests(TestCase):
         eq_(response.status_code, 200)
         with override_script_prefix('/en-US/'):
             groups_url = reverse('groups:index_groups')
-        ok_(groups_url not in unicode(response.content, 'utf-8'))
+        ok_(groups_url not in str(response.content, 'utf-8'))
 
     def test_section_does_not_exist(self):
         """When not section exists in request.POST, 404 is raised."""
