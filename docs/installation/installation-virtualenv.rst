@@ -147,10 +147,6 @@ Setting up a MySQL user and database for development:
 Running Mozillians
 ******************
 
-#. Update product details::
-
-     (venv)$ ./manage.py update_product_details -f
-
 #. Apply migrations::
 
      (venv)$ ./manage.py migrate

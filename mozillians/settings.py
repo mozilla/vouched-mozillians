@@ -41,7 +41,6 @@ INSTALLED_APPS = (
     "compressor",
     "django_nose",
     "session_csrf",
-    "product_details",
     "csp",
     "mozilla_django_oidc",
     "cities_light",
@@ -190,12 +189,9 @@ LANGUAGE_URL_MAP = dict([(i.lower(), i) for i in get_langs()])
 
 
 def lazy_langs():
-    from product_details import product_details
-
     return [
-        (lang.lower(), product_details.languages[lang]["native"])
+        (lang.lower(), lang.lower())
         for lang in get_langs()
-        if lang in product_details.languages
     ]
 
 
