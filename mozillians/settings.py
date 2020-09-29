@@ -239,9 +239,6 @@ DEFAULT_AVATAR_URL = config(
 )
 DEFAULT_AVATAR_PATH = os.path.join(MEDIA_ROOT, DEFAULT_AVATAR)
 
-# Mozspace
-MOZSPACE_PHOTO_DIR = config("MOZSPACE_PHOTO_DIR", default="uploads/mozspaces")
-
 # Announcements
 ANNOUNCEMENTS_PHOTO_DIR = config(
     "ANNOUNCEMENTS_PHOTO_DIR", default="uploads/announcements"
