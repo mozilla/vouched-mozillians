@@ -1,16 +1,14 @@
 import re
 import urllib
 from contextlib import contextmanager
-from warnings import warn
 
 from django.conf import settings
 from django.http import HttpResponsePermanentRedirect
-from django.utils.encoding import iri_to_uri, smart_str
+from django.utils.encoding import iri_to_uri
 from django.utils.translation import activate
 from django.utils.translation import ugettext_lazy as _lazy
 
 from mozillians.common import urlresolvers
-from mozillians.common.templatetags.helpers import urlparams
 
 LOGIN_MESSAGE = _lazy(u'You must be logged in to continue.')
 GET_VOUCHED_MESSAGE = _lazy(u'You must be vouched to continue.')

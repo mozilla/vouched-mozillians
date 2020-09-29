@@ -13,8 +13,6 @@ services:
       - ./docker/files/mariadb.cnf:/etc/mysql/conf.d/my.cnf
   memcached:
     image: memcached
-  broker:
-    image: redis:3
   web:
     build:
       context: .
@@ -28,7 +26,5 @@ services:
     links:
       - db
       - memcached
-      - broker
 volumes:
   mariadb_volume:
-

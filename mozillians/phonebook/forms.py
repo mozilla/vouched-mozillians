@@ -1,16 +1,13 @@
 import re
-from datetime import datetime
 
 import happyforms
 from django import forms
 from django.contrib.auth.models import User
-from django.forms.models import BaseInlineFormSet, inlineformset_factory
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
 
 from mozillians.phonebook.validators import validate_username
-from mozillians.phonebook.widgets import MonthYearWidget
-from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
+from mozillians.users.models import UserProfile
 
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
 

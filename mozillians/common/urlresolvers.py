@@ -4,8 +4,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as django_reverse
 from django.utils.encoding import iri_to_uri
 from django.utils.functional import lazy
-from django.utils.translation.trans_real import parse_accept_lang_header
-
 
 # Thread-local storage for URL prefixes. Access with (get|set)_url_prefix.
 _local = local()
