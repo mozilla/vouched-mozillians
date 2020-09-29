@@ -8,8 +8,8 @@ More info about humans.txt here http://humanstxt.org/"""
 from django.apps import AppConfig
 
 
-default_app_config = 'mozillians.humans.HumansConfig'
+default_app_config = "mozillians.humans.HumansConfig"
 
 
 class HumansConfig(AppConfig):
-    name = 'mozillians.humans'
+    name = "mozillians.humans"

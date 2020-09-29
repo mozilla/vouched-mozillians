@@ -1,1 +1,1 @@
-default_app_config = 'mozillians.users.apps.UserConfig'
+default_app_config = "mozillians.users.apps.UserConfig"

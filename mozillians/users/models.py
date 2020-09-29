@@ -15,10 +15,16 @@ from product_details import product_details
 
 from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.validators import validate_email
-from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
-                                       PRIVACY_CHOICES_WITH_PRIVATE, PRIVATE,
-                                       PUBLIC, PUBLIC_INDEXABLE_FIELDS,
-                                       UserProfileQuerySet)
+from mozillians.users.managers import (
+    EMPLOYEES,
+    MOZILLIANS,
+    PRIVACY_CHOICES,
+    PRIVACY_CHOICES_WITH_PRIVATE,
+    PRIVATE,
+    PUBLIC,
+    PUBLIC_INDEXABLE_FIELDS,
+    UserProfileQuerySet,
+)
 
 COUNTRIES = product_details.get_regions("en-US")
 AVATAR_SIZE = (300, 300)
@@ -42,7 +48,9 @@ class UserProfilePrivacyModel(models.Model):
     _privacy_level = None
 
     privacy_full_name = PrivacyField()
-    privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE, default=MOZILLIANS)
+    privacy_email = PrivacyField(
+        choices=PRIVACY_CHOICES_WITH_PRIVATE, default=MOZILLIANS
+    )
     privacy_date_mozillian = PrivacyField()
     privacy_title = PrivacyField()
 
@@ -77,14 +85,19 @@ class UserProfilePrivacyModel(models.Model):
             field_names = list(
                 set(
                     chain.from_iterable(
-                        (field.name, field.attname) if hasattr(field, "attname") else (field.name,)
+                        (field.name, field.attname)
+                        if hasattr(field, "attname")
+                        else (field.name,)
                         for field in cls._meta.get_fields()
                         if not (field.many_to_one and field.related_model is None)
                     )
                 )
             )
             for name in field_names:
-                if name.startswith("privacy_") or not "privacy_%s" % name in field_names:
+                if (
+                    name.startswith("privacy_")
+                    or not "privacy_%s" % name in field_names
+                ):
                     # skip privacy fields and uncontrolled fields
                     continue
                 field = cls._meta.get_field(name)
@@ -112,10 +125,12 @@ class UserProfile(UserProfilePrivacyModel):
         max_length=255, default="", blank=False, verbose_name=_lazy("Full Name")
     )
     is_vouched = models.BooleanField(
-        default=False, help_text="You can edit vouched status by editing invidual vouches"
+        default=False,
+        help_text="You can edit vouched status by editing invidual vouches",
     )
     can_vouch = models.BooleanField(
-        default=False, help_text="You can edit can_vouch status by editing invidual vouches"
+        default=False,
+        help_text="You can edit can_vouch status by editing invidual vouches",
     )
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -192,7 +207,9 @@ class UserProfile(UserProfilePrivacyModel):
     @property
     def _alternate_emails(self):
         _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
-        accounts = _getattr("externalaccount_set").filter(type=ExternalAccount.TYPE_EMAIL)
+        accounts = _getattr("externalaccount_set").filter(
+            type=ExternalAccount.TYPE_EMAIL
+        )
         return self._filter_accounts_privacy(accounts)
 
     @property
@@ -204,7 +221,10 @@ class UserProfile(UserProfilePrivacyModel):
     @property
     def _is_public_indexable(self):
         for field in PUBLIC_INDEXABLE_FIELDS:
-            if getattr(self, field, None) and getattr(self, "privacy_%s" % field, None) == PUBLIC:
+            if (
+                getattr(self, field, None)
+                and getattr(self, "privacy_%s" % field, None) == PUBLIC
+            ):
                 return True
         return False
 
@@ -217,7 +237,9 @@ class UserProfile(UserProfilePrivacyModel):
         if self._privacy_level:
             # Try IDP contact first
             if self.idp_profiles.exists():
-                contact_ids = self.identity_profiles.filter(primary_contact_identity=True)
+                contact_ids = self.identity_profiles.filter(
+                    primary_contact_identity=True
+                )
                 if contact_ids.exists():
                     return contact_ids[0].email
                 return ""
@@ -257,7 +279,10 @@ class UserProfile(UserProfilePrivacyModel):
         for vouch in _getattr(type).all():
             vouch.vouchee.set_instance_privacy_level(self._privacy_level)
             for field in UserProfile.privacy_fields():
-                if getattr(vouch.vouchee, "privacy_%s" % field, 0) >= self._privacy_level:
+                if (
+                    getattr(vouch.vouchee, "privacy_%s" % field, 0)
+                    >= self._privacy_level
+                ):
                     vouch_ids.append(vouch.id)
         vouches = _getattr(type).filter(pk__in=vouch_ids)
 
@@ -406,15 +431,21 @@ class IdpProfile(models.Model):
         PROVIDER_GOOGLE,
     ]
 
-    profile = models.ForeignKey(UserProfile, related_name="idp_profiles", on_delete=models.CASCADE)
-    type = models.IntegerField(choices=PROVIDER_TYPES, default=None, null=True, blank=False)
+    profile = models.ForeignKey(
+        UserProfile, related_name="idp_profiles", on_delete=models.CASCADE
+    )
+    type = models.IntegerField(
+        choices=PROVIDER_TYPES, default=None, null=True, blank=False
+    )
     # Auth0 required data
     auth0_user_id = models.CharField(max_length=1024, default="", blank=True)
     primary = models.BooleanField(default=False)
     email = models.EmailField(blank=True, default="")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    privacy = models.PositiveIntegerField(default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE)
+    privacy = models.PositiveIntegerField(
+        default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE
+    )
     primary_contact_identity = models.BooleanField(default=False)
     username = models.CharField(max_length=1024, default="", blank=True)
 
@@ -445,7 +476,9 @@ class IdpProfile(models.Model):
         self.type = self.get_provider_type()
         # If there isn't a primary contact identity, create one
         if not (
-            IdpProfile.objects.filter(profile=self.profile, primary_contact_identity=True).exists()
+            IdpProfile.objects.filter(
+                profile=self.profile, primary_contact_identity=True
+            ).exists()
         ):
             self.primary_contact_identity = True
 
@@ -520,11 +553,17 @@ class ExternalAccount(models.Model):
     #            user's entry. Function should return the cleaned
     #            data.
     ACCOUNT_TYPES = {
-        TYPE_EMAIL: {"name": "Alternate email address", "url": "", "validator": validate_email}
+        TYPE_EMAIL: {
+            "name": "Alternate email address",
+            "url": "",
+            "validator": validate_email,
+        }
     }
 
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
-    identifier = models.CharField(max_length=255, verbose_name=_lazy("Account Username"))
+    identifier = models.CharField(
+        max_length=255, verbose_name=_lazy("Account Username")
+    )
     type = models.CharField(
         max_length=30,
         choices=sorted(
@@ -533,14 +572,18 @@ class ExternalAccount(models.Model):
         ),
         verbose_name=_lazy("Account Type"),
     )
-    privacy = models.PositiveIntegerField(default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE)
+    privacy = models.PositiveIntegerField(
+        default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE
+    )
 
     class Meta:
         ordering = ["type"]
         unique_together = ("identifier", "type", "user")
 
     def get_identifier_url(self):
-        url = self.ACCOUNT_TYPES[self.type]["url"].format(identifier=urlquote(self.identifier))
+        url = self.ACCOUNT_TYPES[self.type]["url"].format(
+            identifier=urlquote(self.identifier)
+        )
         if self.type == "LINKEDIN" and "://" in self.identifier:
             return self.identifier
 
@@ -550,7 +593,9 @@ class ExternalAccount(models.Model):
         if model_class == type(self) and unique_check == ("identifier", "type", "user"):
             return _("You already have an account with this name and type.")
         else:
-            return super(ExternalAccount, self).unique_error_message(model_class, unique_check)
+            return super(ExternalAccount, self).unique_error_message(
+                model_class, unique_check
+            )
 
     def __unicode__(self):
         return self.type

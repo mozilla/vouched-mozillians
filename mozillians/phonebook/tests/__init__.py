@@ -6,7 +6,7 @@ from mozillians.users.models import UserProfilePrivacyModel
 
 
 class InviteFactory(factory.DjangoModelFactory):
-    recipient = factory.Sequence(lambda n: 'user{0}@example.com'.format(n))
+    recipient = factory.Sequence(lambda n: "user{0}@example.com".format(n))
 
     class Meta:
         model = Invite
@@ -19,5 +19,5 @@ def _get_privacy_fields(privacy_level):
         data[field.name] = privacy_level
 
     # privacy_tshirt field has only one level of privacy available
-    data['privacy_tshirt'] = PRIVATE
+    data["privacy_tshirt"] = PRIVATE
     return data

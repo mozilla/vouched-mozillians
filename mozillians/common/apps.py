@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class CommonConfig(AppConfig):
-    name = 'mozillians.common'
-    label = 'common'
+    name = "mozillians.common"
+    label = "common"

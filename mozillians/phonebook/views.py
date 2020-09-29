@@ -17,15 +17,17 @@ from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
 from mozillians.users.models import IdpProfile, UserProfile
 
-ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
+ORIGINAL_CONNECTION_USER_ID = (
+    "https://sso.mozilla.com/claim/original_connection_user_id"
+)
 
 
 @never_cache
 @allow_public
 def home(request):
     if request.user.is_authenticated:
-        return redirect('phonebook:profile_view', request.user.username)
-    return render(request, 'phonebook/home.html')
+        return redirect("phonebook:profile_view", request.user.username)
+    return render(request, "phonebook/home.html")
 
 
 @allow_public
@@ -33,33 +35,41 @@ def home(request):
 def view_profile(request, username):
     """View a profile by username."""
     data = {}
-    privacy_mappings = {'anonymous': PUBLIC, 'mozillian': MOZILLIANS, 'employee': EMPLOYEES,
-                        'private': PRIVATE, 'myself': None}
+    privacy_mappings = {
+        "anonymous": PUBLIC,
+        "mozillian": MOZILLIANS,
+        "employee": EMPLOYEES,
+        "private": PRIVATE,
+        "myself": None,
+    }
     privacy_level = None
 
-    if (request.user.is_authenticated and request.user.username == username):
+    if request.user.is_authenticated and request.user.username == username:
         # own profile
-        view_as = request.GET.get('view_as', 'myself')
+        view_as = request.GET.get("view_as", "myself")
         privacy_level = privacy_mappings.get(view_as, None)
-        profile = UserProfile.objects.privacy_level(privacy_level).get(user__username=username)
-        data['privacy_mode'] = view_as
+        profile = UserProfile.objects.privacy_level(privacy_level).get(
+            user__username=username
+        )
+        data["privacy_mode"] = view_as
     else:
         userprofile_query = UserProfile.objects.filter(user__username=username)
         public_profile_exists = userprofile_query.public().exists()
         profile_exists = userprofile_query.exists()
-        profile_complete = userprofile_query.exclude(full_name='').exists()
+        profile_complete = userprofile_query.exclude(full_name="").exists()
 
         if not public_profile_exists:
             if not request.user.is_authenticated:
                 # you have to be authenticated to continue
                 messages.warning(request, LOGIN_MESSAGE)
-                return (login_required(view_profile, login_url=reverse('phonebook:home'))
-                        (request, username))
+                return login_required(
+                    view_profile, login_url=reverse("phonebook:home")
+                )(request, username)
 
             if not request.user.userprofile.is_vouched:
                 # you have to be vouched to continue
                 messages.error(request, GET_VOUCHED_MESSAGE)
-                return redirect('phonebook:home')
+                return redirect("phonebook:home")
 
         if not profile_exists or not profile_complete:
             raise Http404
@@ -67,15 +77,18 @@ def view_profile(request, username):
         profile = UserProfile.objects.get(user__username=username)
         profile.set_instance_privacy_level(PUBLIC)
         if request.user.is_authenticated:
-            profile.set_instance_privacy_level(
-                request.user.userprofile.privacy_level)
+            profile.set_instance_privacy_level(request.user.userprofile.privacy_level)
 
-    data['shown_user'] = profile.user
-    data['profile'] = profile
-    data['primary_identity'] = profile.identity_profiles.filter(primary_contact_identity=True)
-    data['alternate_identities'] = profile.identity_profiles.filter(primary_contact_identity=False)
+    data["shown_user"] = profile.user
+    data["profile"] = profile
+    data["primary_identity"] = profile.identity_profiles.filter(
+        primary_contact_identity=True
+    )
+    data["alternate_identities"] = profile.identity_profiles.filter(
+        primary_contact_identity=False
+    )
 
-    return render(request, 'phonebook/profile.html', data)
+    return render(request, "phonebook/profile.html", data)
 
 
 @allow_unvouched
@@ -86,7 +99,7 @@ def edit_profile(request):
     user = User.objects.get(pk=request.user.id)
     profile = user.userprofile
     sections = {
-        'basic_section': ['user_form', 'basic_information_form'],
+        "basic_section": ["user_form", "basic_information_form"],
     }
 
     curr_sect = next((s for s in list(sections.keys()) if s in request.POST), None)
@@ -97,11 +110,11 @@ def edit_profile(request):
         return None
 
     ctx = {}
-    ctx['user_form'] = forms.UserForm(get_request_data('user_form'), instance=user)
-    basic_information_data = get_request_data('basic_information_form')
-    ctx['basic_information_form'] = forms.BasicInformationForm(basic_information_data,
-                                                               request.FILES or None,
-                                                               instance=profile)
+    ctx["user_form"] = forms.UserForm(get_request_data("user_form"), instance=user)
+    basic_information_data = get_request_data("basic_information_form")
+    ctx["basic_information_form"] = forms.BasicInformationForm(
+        basic_information_data, request.FILES or None, instance=profile
+    )
 
     forms_valid = True
     if request.POST:
@@ -114,21 +127,25 @@ def edit_profile(request):
             for f in curr_forms:
                 f.save()
 
-            next_section = request.GET.get('next')
-            next_url = urlparams(reverse('phonebook:profile_edit'), next_section)
+            next_section = request.GET.get("next")
+            next_url = urlparams(reverse("phonebook:profile_edit"), next_section)
             if user.username != old_username:
-                msg = _('You changed your username; '
-                        'please note your profile URL has also changed.')
+                msg = _(
+                    "You changed your username; "
+                    "please note your profile URL has also changed."
+                )
                 messages.info(request, _(msg))
             return HttpResponseRedirect(next_url)
 
-    ctx.update({
-        'profile': request.user.userprofile,
-        'vouch_threshold': settings.CAN_VOUCH_THRESHOLD,
-        'forms_valid': forms_valid
-    })
+    ctx.update(
+        {
+            "profile": request.user.userprofile,
+            "vouch_threshold": settings.CAN_VOUCH_THRESHOLD,
+            "forms_valid": forms_valid,
+        }
+    )
 
-    return render(request, 'phonebook/edit_profile.html', ctx)
+    return render(request, "phonebook/edit_profile.html", ctx)
 
 
 @allow_unvouched
@@ -147,14 +164,14 @@ def delete_identity(request, identity_pk):
     if idp_query.exists():
         idp_type = idp_query[0].get_type_display()
         idp_query.delete()
-        msg = _('Identity {0} successfully deleted.'.format(idp_type))
+        msg = _("Identity {0} successfully deleted.".format(idp_type))
         messages.success(request, msg)
-        return redirect('phonebook:profile_edit')
+        return redirect("phonebook:profile_edit")
 
     # We are trying to delete the primary identity, politely ignore the request
-    msg = _('Sorry the requested Identity cannot be deleted.')
+    msg = _("Sorry the requested Identity cannot be deleted.")
     messages.error(request, msg)
-    return redirect('phonebook:profile_edit')
+    return redirect("phonebook:profile_edit")
 
 
 @allow_unvouched
@@ -164,7 +181,7 @@ def confirm_delete(request):
     leave.
 
     """
-    return render(request, 'phonebook/confirm_delete.html')
+    return render(request, "phonebook/confirm_delete.html")
 
 
 @allow_unvouched
@@ -172,7 +189,9 @@ def confirm_delete(request):
 @require_POST
 def delete(request):
     request.user.delete()
-    messages.info(request, _('Your account has been deleted. Thanks for being a Mozillian!'))
+    messages.info(
+        request, _("Your account has been deleted. Thanks for being a Mozillian!")
+    )
     return logout(request)
 
 
@@ -180,7 +199,7 @@ def delete(request):
 def logout(request):
     """View that logs out the user and redirects to home page."""
     auth_logout(request)
-    return redirect('phonebook:home')
+    return redirect("phonebook:home")
 
 
 @allow_unvouched
@@ -188,5 +207,5 @@ def logout(request):
 def delete_idp_profiles(request):
     """QA helper: Delete IDP profiles for request.user"""
     request.user.userprofile.idp_profiles.all().delete()
-    messages.warning(request, 'Identities deleted.')
-    return redirect('phonebook:profile_edit')
+    messages.warning(request, "Identities deleted.")
+    return redirect("phonebook:profile_edit")

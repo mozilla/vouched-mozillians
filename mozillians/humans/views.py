@@ -14,4 +14,4 @@ def humans(request):
 @allow_public
 def contribute_view(request):
     """Generate a contribute.json"""
-    return serve(request, 'contribute.json', document_root=settings.ROOT)
+    return serve(request, "contribute.json", document_root=settings.ROOT)

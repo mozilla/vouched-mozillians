@@ -10,18 +10,22 @@ import jinja2
 from mozillians.users.models import IdpProfile
 
 
-PARAGRAPH_RE = re.compile(r'(?:\r\n|\r|\n){2,}')
+PARAGRAPH_RE = re.compile(r"(?:\r\n|\r|\n){2,}")
 
 
 @library.filter
 def paragraphize(value):
-    return jinja2.Markup('\n\n'.join('<p>%s</p>' % p.replace('\n', '<br>\n')
-                                      for p in PARAGRAPH_RE.split(jinja2.escape(value))))
+    return jinja2.Markup(
+        "\n\n".join(
+            "<p>%s</p>" % p.replace("\n", "<br>\n")
+            for p in PARAGRAPH_RE.split(jinja2.escape(value))
+        )
+    )
 
 
 @jinja2.contextfunction
 @library.global_function
-@library.render_with('includes/search_result.html')
+@library.render_with("includes/search_result.html")
 def search_result(context, result):
     d = dict(list(context.items()))
     d.update(result=result)
@@ -57,9 +61,9 @@ def simple_urlize(value):
 @library.global_function
 def get_search_models(models):
     """Generates GET params to specify models."""
-    params = ''
+    params = ""
     for model in models:
-        params += '&models={}'.format(model)
+        params += "&models={}".format(model)
     return params
 
 
@@ -74,7 +78,9 @@ def get_idp_external_url(obj):
     if obj.username:
         if obj.type == IdpProfile.PROVIDER_GITHUB:
             username = jinja2.Markup.escape(obj.username)
-            github_url = '<a href="https://github.com/{username}" target="_blank">{username}</a>'
+            github_url = (
+                '<a href="https://github.com/{username}" target="_blank">{username}</a>'
+            )
             return jinja2.Markup(github_url.format(username=username))
         return obj.username
-    return ''
+    return ""

@@ -33,7 +33,11 @@ class MozSpace(models.Model):
     coordinator = models.ForeignKey(User, on_delete=models.CASCADE)
     extra_text = models.TextField(blank=True, default="")
     cover_photo = models.ForeignKey(
-        "Photo", null=True, blank=True, related_name="featured_mozspace", on_delete=models.CASCADE
+        "Photo",
+        null=True,
+        blank=True,
+        related_name="featured_mozspace",
+        on_delete=models.CASCADE,
     )
 
     def __unicode__(self):
@@ -42,7 +46,9 @@ class MozSpace(models.Model):
 
 class Keyword(models.Model):
     keyword = models.CharField(max_length=50, unique=True)
-    mozspace = models.ForeignKey(MozSpace, related_name="keywords", on_delete=models.CASCADE)
+    mozspace = models.ForeignKey(
+        MozSpace, related_name="keywords", on_delete=models.CASCADE
+    )
 
     def save(self, *args, **kwargs):
         self.keyword = self.keyword.lower()
@@ -54,7 +60,9 @@ class Keyword(models.Model):
 
 class Photo(models.Model):
     photofile = ImageField(upload_to=_calculate_photo_filename)
-    mozspace = models.ForeignKey(MozSpace, related_name="photos", on_delete=models.CASCADE)
+    mozspace = models.ForeignKey(
+        MozSpace, related_name="photos", on_delete=models.CASCADE
+    )
 
     def __unicode__(self):
         return str(self.id)
