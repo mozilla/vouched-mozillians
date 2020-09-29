@@ -60,10 +60,6 @@ Building mozillians
 
      $ docker-compose up -d db
 
-#. Update the product details::
-
-     $ docker-compose run web python manage.py update_product_details -f
-
 #. Create the database tables and run the migrations::
 
      $ docker-compose run web python manage.py migrate --noinput

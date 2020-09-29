@@ -11,7 +11,6 @@ from django.utils.encoding import iri_to_uri
 from django.utils.http import urlquote
 from django.utils.translation import ugettext as _
 from django.utils.translation import ugettext_lazy as _lazy
-from product_details import product_details
 
 from mozillians.common.urlresolvers import reverse
 from mozillians.phonebook.validators import validate_email
@@ -26,7 +25,6 @@ from mozillians.users.managers import (
     UserProfileQuerySet,
 )
 
-COUNTRIES = product_details.get_regions("en-US")
 AVATAR_SIZE = (300, 300)
 logger = logging.getLogger(__name__)
 ProfileManager = Manager.from_queryset(UserProfileQuerySet)

@@ -3,7 +3,6 @@
 Pillow
 django-session-csrf
 django_csp
-django-mozilla-product-details
 mozilla-django-oidc
 Jinja2
 Django
