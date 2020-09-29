@@ -97,7 +97,7 @@ class Migration(migrations.Migration):
                 ('geo_region', models.ForeignKey(on_delete=django.db.models.deletion.SET_NULL, blank=True, to='geo.Region', null=True)),
                 ('groups', models.ManyToManyField(related_name='members', through='groups.GroupMembership', to='groups.Group', blank=True)),
                 ('skills', models.ManyToManyField(related_name='members', to='groups.Skill', blank=True)),
-                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(on_delete=models.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['full_name'],
@@ -112,7 +112,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(default=b'', max_length=500, verbose_name='Reason for Vouching')),
                 ('autovouch', models.BooleanField(default=False)),
                 ('date', models.DateTimeField(default=None, null=True)),
-                ('vouchee', models.ForeignKey(related_name='vouches_received', to='users.UserProfile')),
+                ('vouchee', models.ForeignKey(on_delete=models.CASCADE, related_name='vouches_received', to='users.UserProfile')),
                 ('voucher', models.ForeignKey(related_name='vouches_made', on_delete=django.db.models.deletion.SET_NULL, default=None, blank=True, to='users.UserProfile', null=True)),
             ],
             options={
@@ -128,7 +128,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='language',
             name='userprofile',
-            field=models.ForeignKey(to='users.UserProfile'),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='users.UserProfile'),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(
@@ -138,7 +138,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='externalaccount',
             name='user',
-            field=models.ForeignKey(to='users.UserProfile'),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='users.UserProfile'),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

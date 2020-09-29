@@ -16,7 +16,7 @@ patch()
 activate('en-US')
 
 
-def error_page(request, template, status=None):
+def error_page(request, template, status=None, **kwargs):
     """Render error templates, found in the root /templates directory.
 
     If no status parameter is explcitedly passed, this function assumes
@@ -26,16 +26,16 @@ def error_page(request, template, status=None):
     return render(request, '%d.html' % template, status=(status or template))
 
 
-handler404 = lambda r: error_page(r, 404) # noqa
+handler404 = lambda r, exc={}: error_page(r, 404, **exc) # noqa
 handler500 = lambda r: error_page(r, 500) # noqa
 handler_csrf = lambda r, cb=None: error_page(r, 'csrf_error', status=400) # noqa
 
 
 urlpatterns = [
     url(r'^oidc/', include('mozilla_django_oidc.urls')),
-    url(r'', include('mozillians.phonebook.urls', app_name='phonebook', namespace='phonebook')),
+    url(r'', include('mozillians.phonebook.urls', namespace='phonebook')),
     # Admin URLs.
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
 ]
 
 admin.site.site_header = 'Mozillians Administration'

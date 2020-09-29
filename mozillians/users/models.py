@@ -20,7 +20,7 @@ from mozillians.users.managers import (EMPLOYEES, MOZILLIANS, PRIVACY_CHOICES,
                                        PUBLIC, PUBLIC_INDEXABLE_FIELDS,
                                        UserProfileQuerySet)
 
-COUNTRIES = product_details.get_regions('en-US')
+COUNTRIES = product_details.get_regions("en-US")
 AVATAR_SIZE = (300, 300)
 logger = logging.getLogger(__name__)
 ProfileManager = Manager.from_queryset(UserProfileQuerySet)
@@ -28,14 +28,12 @@ ProfileManager = Manager.from_queryset(UserProfileQuerySet)
 
 def _calculate_photo_filename(instance, filename):
     """Generate a unique filename for uploaded photo."""
-    return os.path.join(settings.USER_AVATAR_DIR, str(uuid.uuid4()) + '.jpg')
+    return os.path.join(settings.USER_AVATAR_DIR, str(uuid.uuid4()) + ".jpg")
 
 
 class PrivacyField(models.PositiveSmallIntegerField):
-
     def __init__(self, *args, **kwargs):
-        myargs = {'default': MOZILLIANS,
-                  'choices': PRIVACY_CHOICES}
+        myargs = {"default": MOZILLIANS, "choices": PRIVACY_CHOICES}
         myargs.update(kwargs)
         super(PrivacyField, self).__init__(*args, **myargs)
 
@@ -44,8 +42,7 @@ class UserProfilePrivacyModel(models.Model):
     _privacy_level = None
 
     privacy_full_name = PrivacyField()
-    privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE,
-                                 default=MOZILLIANS)
+    privacy_email = PrivacyField(choices=PRIVACY_CHOICES_WITH_PRIVATE, default=MOZILLIANS)
     privacy_date_mozillian = PrivacyField()
     privacy_title = PrivacyField()
 
@@ -77,13 +74,17 @@ class UserProfilePrivacyModel(models.Model):
         # Cache on the class object
         if cls.CACHED_PRIVACY_FIELDS is None:
             privacy_fields = {}
-            field_names = list(set(chain.from_iterable(
-                (field.name, field.attname) if hasattr(field, 'attname') else
-                (field.name,) for field in cls._meta.get_fields()
-                if not (field.many_to_one and field.related_model is None)
-            )))
+            field_names = list(
+                set(
+                    chain.from_iterable(
+                        (field.name, field.attname) if hasattr(field, "attname") else (field.name,)
+                        for field in cls._meta.get_fields()
+                        if not (field.many_to_one and field.related_model is None)
+                    )
+                )
+            )
             for name in field_names:
-                if name.startswith('privacy_') or not 'privacy_%s' % name in field_names:
+                if name.startswith("privacy_") or not "privacy_%s" % name in field_names:
                     # skip privacy fields and uncontrolled fields
                     continue
                 field = cls._meta.get_field(name)
@@ -97,7 +98,7 @@ class UserProfilePrivacyModel(models.Model):
                 privacy_fields[name] = default
             # HACK: There's not really an email field on UserProfile,
             # but it's faked with a property
-            privacy_fields['email'] = ''
+            privacy_fields["email"] = ""
 
             cls.CACHED_PRIVACY_FIELDS = privacy_fields
         return cls.CACHED_PRIVACY_FIELDS
@@ -106,21 +107,23 @@ class UserProfilePrivacyModel(models.Model):
 class UserProfile(UserProfilePrivacyModel):
     objects = ProfileManager()
 
-    user = models.OneToOneField(User)
-    full_name = models.CharField(max_length=255, default='', blank=False,
-                                 verbose_name=_lazy('Full Name'))
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    full_name = models.CharField(
+        max_length=255, default="", blank=False, verbose_name=_lazy("Full Name")
+    )
     is_vouched = models.BooleanField(
-        default=False,
-        help_text='You can edit vouched status by editing invidual vouches')
+        default=False, help_text="You can edit vouched status by editing invidual vouches"
+    )
     can_vouch = models.BooleanField(
-        default=False,
-        help_text='You can edit can_vouch status by editing invidual vouches')
+        default=False, help_text="You can edit can_vouch status by editing invidual vouches"
+    )
     last_updated = models.DateTimeField(auto_now=True)
 
-    date_mozillian = models.DateField('When was involved with Mozilla',
-                                      null=True, blank=True, default=None)
+    date_mozillian = models.DateField(
+        "When was involved with Mozilla", null=True, blank=True, default=None
+    )
     # This is the Auth0 user ID. We are saving only the primary here.
-    auth0_user_id = models.CharField(max_length=1024, default='', blank=True)
+    auth0_user_id = models.CharField(max_length=1024, default="", blank=True)
     is_staff = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -128,11 +131,11 @@ class UserProfile(UserProfilePrivacyModel):
         return self.display_name
 
     def get_absolute_url(self):
-        return reverse('phonebook:profile_view', args=[self.user.username])
+        return reverse("phonebook:profile_view", args=[self.user.username])
 
     class Meta:
-        db_table = 'profile'
-        ordering = ['full_name']
+        db_table = "profile"
+        ordering = ["full_name"]
 
     def __getattribute__(self, attrname):
         """Special privacy aware __getattribute__ method.
@@ -148,18 +151,18 @@ class UserProfile(UserProfilePrivacyModel):
         respective properties, where the privacy modifications are
         more complex.
         """
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
         privacy_fields = UserProfile.privacy_fields()
-        privacy_level = _getattr('_privacy_level')
+        privacy_level = _getattr("_privacy_level")
         special_functions = {
-            'accounts': '_accounts',
-            'alternate_emails': '_alternate_emails',
-            'email': '_primary_email',
-            'is_public_indexable': '_is_public_indexable',
-            'vouches_made': '_vouches_made',
-            'vouches_received': '_vouches_received',
-            'vouched_by': '_vouched_by',
-            'identity_profiles': '_identity_profiles'
+            "accounts": "_accounts",
+            "alternate_emails": "_alternate_emails",
+            "email": "_primary_email",
+            "is_public_indexable": "_is_public_indexable",
+            "vouches_made": "_vouches_made",
+            "vouches_received": "_vouches_received",
+            "vouched_by": "_vouched_by",
+            "identity_profiles": "_identity_profiles",
         }
 
         if attrname in special_functions:
@@ -168,7 +171,7 @@ class UserProfile(UserProfilePrivacyModel):
         if not privacy_level or attrname not in privacy_fields:
             return _getattr(attrname)
 
-        field_privacy = _getattr('privacy_%s' % attrname)
+        field_privacy = _getattr("privacy_%s" % attrname)
         if field_privacy < privacy_level:
             return privacy_fields.get(attrname)
 
@@ -181,33 +184,33 @@ class UserProfile(UserProfilePrivacyModel):
 
     @property
     def _accounts(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
         excluded_types = [ExternalAccount.TYPE_WEBSITE, ExternalAccount.TYPE_EMAIL]
-        accounts = _getattr('externalaccount_set').exclude(type__in=excluded_types)
+        accounts = _getattr("externalaccount_set").exclude(type__in=excluded_types)
         return self._filter_accounts_privacy(accounts)
 
     @property
     def _alternate_emails(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
-        accounts = _getattr('externalaccount_set').filter(type=ExternalAccount.TYPE_EMAIL)
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
+        accounts = _getattr("externalaccount_set").filter(type=ExternalAccount.TYPE_EMAIL)
         return self._filter_accounts_privacy(accounts)
 
     @property
     def _identity_profiles(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
-        accounts = _getattr('idp_profiles').all()
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
+        accounts = _getattr("idp_profiles").all()
         return self._filter_accounts_privacy(accounts)
 
     @property
     def _is_public_indexable(self):
         for field in PUBLIC_INDEXABLE_FIELDS:
-            if getattr(self, field, None) and getattr(self, 'privacy_%s' % field, None) == PUBLIC:
+            if getattr(self, field, None) and getattr(self, "privacy_%s" % field, None) == PUBLIC:
                 return True
         return False
 
     @property
     def _primary_email(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
 
         privacy_fields = UserProfile.privacy_fields()
 
@@ -217,29 +220,30 @@ class UserProfile(UserProfilePrivacyModel):
                 contact_ids = self.identity_profiles.filter(primary_contact_identity=True)
                 if contact_ids.exists():
                     return contact_ids[0].email
-                return ''
+                return ""
 
             # Fallback to user.email
-            if _getattr('privacy_email') < self._privacy_level:
-                return privacy_fields['email']
+            if _getattr("privacy_email") < self._privacy_level:
+                return privacy_fields["email"]
 
         # In case we don't have a privacy aware attribute access
         if self.idp_profiles.filter(primary_contact_identity=True).exists():
             return self.idp_profiles.filter(primary_contact_identity=True)[0].email
-        return _getattr('user').email
+        return _getattr("user").email
 
     @property
     def _vouched_by(self):
         privacy_level = self._privacy_level
-        voucher = (UserProfile.objects.filter(vouches_made__vouchee=self)
-                   .order_by('vouches_made__date'))
+        voucher = UserProfile.objects.filter(vouches_made__vouchee=self).order_by(
+            "vouches_made__date"
+        )
 
         if voucher.exists():
             voucher = voucher[0]
             if privacy_level:
                 voucher.set_instance_privacy_level(privacy_level)
                 for field in UserProfile.privacy_fields():
-                    if getattr(voucher, 'privacy_%s' % field) >= privacy_level:
+                    if getattr(voucher, "privacy_%s" % field) >= privacy_level:
                         return voucher
                 return None
             return voucher
@@ -247,13 +251,13 @@ class UserProfile(UserProfilePrivacyModel):
         return None
 
     def _vouches(self, type):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
 
         vouch_ids = []
         for vouch in _getattr(type).all():
             vouch.vouchee.set_instance_privacy_level(self._privacy_level)
             for field in UserProfile.privacy_fields():
-                if getattr(vouch.vouchee, 'privacy_%s' % field, 0) >= self._privacy_level:
+                if getattr(vouch.vouchee, "privacy_%s" % field, 0) >= self._privacy_level:
                     vouch_ids.append(vouch.id)
         vouches = _getattr(type).filter(pk__in=vouch_ids)
 
@@ -261,17 +265,17 @@ class UserProfile(UserProfilePrivacyModel):
 
     @property
     def _vouches_made(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
         if self._privacy_level:
-            return self._vouches('vouches_made')
-        return _getattr('vouches_made')
+            return self._vouches("vouches_made")
+        return _getattr("vouches_made")
 
     @property
     def _vouches_received(self):
-        _getattr = (lambda x: super(UserProfile, self).__getattribute__(x))
+        _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
         if self._privacy_level:
-            return self._vouches('vouches_received')
-        return _getattr('vouches_received')
+            return self._vouches("vouches_received")
+        return _getattr("vouches_received")
 
     @property
     def display_name(self):
@@ -282,7 +286,7 @@ class UserProfile(UserProfilePrivacyModel):
         """Return user privacy clearance."""
         if self.user.is_superuser:
             return PRIVATE
-        if self.groups.filter(name='staff').exists():
+        if self.groups.filter(name="staff").exists():
             return EMPLOYEES
         if self.is_vouched:
             return MOZILLIANS
@@ -294,7 +298,7 @@ class UserProfile(UserProfilePrivacyModel):
         past the original registration view.
 
         """
-        return self.display_name.strip() != ''
+        return self.display_name.strip() != ""
 
     @property
     def is_public(self):
@@ -302,7 +306,7 @@ class UserProfile(UserProfilePrivacyModel):
         # TODO needs update
 
         for field in type(self).privacy_fields():
-            if getattr(self, 'privacy_%s' % field, None) == PUBLIC:
+            if getattr(self, "privacy_%s" % field, None) == PUBLIC:
                 return True
         return False
 
@@ -313,7 +317,7 @@ class UserProfile(UserProfilePrivacyModel):
     @property
     def date_vouched(self):
         """ Return the date of the first vouch, if available."""
-        vouches = self.vouches_received.all().order_by('date')[:1]
+        vouches = self.vouches_received.all().order_by("date")[:1]
         if vouches:
             return vouches[0].date
         return None
@@ -325,7 +329,7 @@ class UserProfile(UserProfilePrivacyModel):
     def set_privacy_level(self, level, save=True):
         """Sets all privacy enabled fields to 'level'."""
         for field in type(self).privacy_fields():
-            setattr(self, 'privacy_%s' % field, level)
+            setattr(self, "privacy_%s" % field, level)
         if save:
             self.save()
 
@@ -348,7 +352,7 @@ class UserProfile(UserProfilePrivacyModel):
 
     def save(self, *args, **kwargs):
         self._privacy_level = None
-        autovouch = kwargs.pop('autovouch', False)
+        autovouch = kwargs.pop("autovouch", False)
 
         super(UserProfile, self).save(*args, **kwargs)
         # Auto_vouch follows the first save, because you can't
@@ -360,6 +364,7 @@ class UserProfile(UserProfilePrivacyModel):
 
 class IdpProfile(models.Model):
     """Basic Identity Provider information for Profiles."""
+
     PROVIDER_UNKNOWN = 0
     PROVIDER_PASSWORDLESS = 10
     PROVIDER_GOOGLE = 20
@@ -368,50 +373,66 @@ class IdpProfile(models.Model):
     PROVIDER_LDAP = 40
 
     PROVIDER_TYPES = (
-        (PROVIDER_UNKNOWN, 'Unknown Provider',),
-        (PROVIDER_PASSWORDLESS, 'Passwordless Provider',),
-        (PROVIDER_GOOGLE, 'Google Provider',),
-        (PROVIDER_GITHUB, 'Github Provider',),
-        (PROVIDER_FIREFOX_ACCOUNTS, 'Firefox Accounts Provider',),
-        (PROVIDER_LDAP, 'LDAP Provider',),
-
+        (
+            PROVIDER_UNKNOWN,
+            "Unknown Provider",
+        ),
+        (
+            PROVIDER_PASSWORDLESS,
+            "Passwordless Provider",
+        ),
+        (
+            PROVIDER_GOOGLE,
+            "Google Provider",
+        ),
+        (
+            PROVIDER_GITHUB,
+            "Github Provider",
+        ),
+        (
+            PROVIDER_FIREFOX_ACCOUNTS,
+            "Firefox Accounts Provider",
+        ),
+        (
+            PROVIDER_LDAP,
+            "LDAP Provider",
+        ),
     )
     # High Security OPs
-    HIGH_AAL_ACCOUNTS = [PROVIDER_LDAP,
-                         PROVIDER_FIREFOX_ACCOUNTS,
-                         PROVIDER_GITHUB,
-                         PROVIDER_GOOGLE]
+    HIGH_AAL_ACCOUNTS = [
+        PROVIDER_LDAP,
+        PROVIDER_FIREFOX_ACCOUNTS,
+        PROVIDER_GITHUB,
+        PROVIDER_GOOGLE,
+    ]
 
-    profile = models.ForeignKey(UserProfile, related_name='idp_profiles')
-    type = models.IntegerField(choices=PROVIDER_TYPES,
-                               default=None,
-                               null=True,
-                               blank=False)
+    profile = models.ForeignKey(UserProfile, related_name="idp_profiles", on_delete=models.CASCADE)
+    type = models.IntegerField(choices=PROVIDER_TYPES, default=None, null=True, blank=False)
     # Auth0 required data
-    auth0_user_id = models.CharField(max_length=1024, default='', blank=True)
+    auth0_user_id = models.CharField(max_length=1024, default="", blank=True)
     primary = models.BooleanField(default=False)
-    email = models.EmailField(blank=True, default='')
+    email = models.EmailField(blank=True, default="")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     privacy = models.PositiveIntegerField(default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE)
     primary_contact_identity = models.BooleanField(default=False)
-    username = models.CharField(max_length=1024, default='', blank=True)
+    username = models.CharField(max_length=1024, default="", blank=True)
 
     def get_provider_type(self):
         """Helper method to autopopulate the model type given the user_id."""
-        if 'ad|' in self.auth0_user_id:
+        if "ad|" in self.auth0_user_id:
             return self.PROVIDER_LDAP
 
-        if 'oauth2|firefoxaccounts' in self.auth0_user_id:
+        if "oauth2|firefoxaccounts" in self.auth0_user_id:
             return self.PROVIDER_FIREFOX_ACCOUNTS
 
-        if 'github|' in self.auth0_user_id:
+        if "github|" in self.auth0_user_id:
             return self.PROVIDER_GITHUB
 
-        if 'google-oauth2|' in self.auth0_user_id:
+        if "google-oauth2|" in self.auth0_user_id:
             return self.PROVIDER_GOOGLE
 
-        if 'email|' in self.auth0_user_id:
+        if "email|" in self.auth0_user_id:
             return self.PROVIDER_PASSWORDLESS
 
         return self.PROVIDER_UNKNOWN
@@ -423,8 +444,9 @@ class IdpProfile(models.Model):
         """
         self.type = self.get_provider_type()
         # If there isn't a primary contact identity, create one
-        if not (IdpProfile.objects.filter(profile=self.profile,
-                                          primary_contact_identity=True).exists()):
+        if not (
+            IdpProfile.objects.filter(profile=self.profile, primary_contact_identity=True).exists()
+        ):
             self.primary_contact_identity = True
 
         super(IdpProfile, self).save(*args, **kwargs)
@@ -439,29 +461,37 @@ class IdpProfile(models.Model):
         profile.save()
 
     def __unicode__(self):
-        return '{}|{}|{}'.format(self.profile, self.type, self.email)
+        return "{}|{}|{}".format(self.profile, self.type, self.email)
 
     class Meta:
-        unique_together = ('profile', 'type', 'email')
+        unique_together = ("profile", "type", "email")
 
 
 class Vouch(models.Model):
-    vouchee = models.ForeignKey(UserProfile, related_name='vouches_received')
-    voucher = models.ForeignKey(UserProfile, related_name='vouches_made',
-                                null=True, default=None, blank=True,
-                                on_delete=models.SET_NULL)
-    description = models.TextField(max_length=500, verbose_name=_lazy('Reason for Vouching'),
-                                   default='')
+    vouchee = models.ForeignKey(
+        UserProfile, related_name="vouches_received", on_delete=models.CASCADE
+    )
+    voucher = models.ForeignKey(
+        UserProfile,
+        related_name="vouches_made",
+        null=True,
+        default=None,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    description = models.TextField(
+        max_length=500, verbose_name=_lazy("Reason for Vouching"), default=""
+    )
     autovouch = models.BooleanField(default=False)
     date = models.DateTimeField()
 
     class Meta:
-        verbose_name_plural = 'vouches'
-        unique_together = ('vouchee', 'voucher')
-        ordering = ['-date']
+        verbose_name_plural = "vouches"
+        unique_together = ("vouchee", "voucher")
+        ordering = ["-date"]
 
     def __unicode__(self):
-        return '{0} vouched by {1}'.format(self.vouchee, self.voucher)
+        return "{0} vouched by {1}".format(self.vouchee, self.voucher)
 
 
 class UsernameBlacklist(models.Model):
@@ -472,12 +502,12 @@ class UsernameBlacklist(models.Model):
         return self.value
 
     class Meta:
-        ordering = ['value']
+        ordering = ["value"]
 
 
 class ExternalAccount(models.Model):
     # Constants for type field values.
-    TYPE_EMAIL = 'EMAIL'
+    TYPE_EMAIL = "EMAIL"
 
     # Account type field documentation:
     # name: The name of the service that this account belongs to. What
@@ -490,33 +520,35 @@ class ExternalAccount(models.Model):
     #            user's entry. Function should return the cleaned
     #            data.
     ACCOUNT_TYPES = {
-        TYPE_EMAIL: {'name': 'Alternate email address',
-                     'url': '',
-                     'validator': validate_email}
+        TYPE_EMAIL: {"name": "Alternate email address", "url": "", "validator": validate_email}
     }
 
-    user = models.ForeignKey(UserProfile)
-    identifier = models.CharField(max_length=255, verbose_name=_lazy('Account Username'))
-    type = models.CharField(max_length=30,
-                            choices=sorted([(k, v['name']) for (k, v) in ACCOUNT_TYPES.items()
-                                            if k != TYPE_EMAIL], key=lambda x: x[1]),
-                            verbose_name=_lazy('Account Type'))
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    identifier = models.CharField(max_length=255, verbose_name=_lazy("Account Username"))
+    type = models.CharField(
+        max_length=30,
+        choices=sorted(
+            [(k, v["name"]) for (k, v) in ACCOUNT_TYPES.items() if k != "EMAIL"],
+            key=lambda x: x[1],
+        ),
+        verbose_name=_lazy("Account Type"),
+    )
     privacy = models.PositiveIntegerField(default=MOZILLIANS, choices=PRIVACY_CHOICES_WITH_PRIVATE)
 
     class Meta:
-        ordering = ['type']
-        unique_together = ('identifier', 'type', 'user')
+        ordering = ["type"]
+        unique_together = ("identifier", "type", "user")
 
     def get_identifier_url(self):
-        url = self.ACCOUNT_TYPES[self.type]['url'].format(identifier=urlquote(self.identifier))
-        if self.type == 'LINKEDIN' and '://' in self.identifier:
+        url = self.ACCOUNT_TYPES[self.type]["url"].format(identifier=urlquote(self.identifier))
+        if self.type == "LINKEDIN" and "://" in self.identifier:
             return self.identifier
 
         return iri_to_uri(url)
 
     def unique_error_message(self, model_class, unique_check):
-        if model_class == type(self) and unique_check == ('identifier', 'type', 'user'):
-            return _('You already have an account with this name and type.')
+        if model_class == type(self) and unique_check == ("identifier", "type", "user"):
+            return _("You already have an account with this name and type.")
         else:
             return super(ExternalAccount, self).unique_error_message(model_class, unique_check)
 

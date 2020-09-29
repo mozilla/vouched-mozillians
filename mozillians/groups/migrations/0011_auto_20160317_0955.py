@@ -20,9 +20,9 @@ class Migration(migrations.Migration):
                 ('accepted', models.NullBooleanField()),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('group', models.ForeignKey(to='groups.Group')),
+                ('group', models.ForeignKey(on_delete=models.CASCADE, to='groups.Group')),
                 ('inviter', models.ForeignKey(related_name='invite_sent', on_delete=django.db.models.deletion.SET_NULL, verbose_name='Inviter', to='users.UserProfile', null=True)),
-                ('redeemer', models.ForeignKey(related_name='group_invited', verbose_name='Redeemer', to='users.UserProfile')),
+                ('redeemer', models.ForeignKey(on_delete=models.CASCADE, related_name='group_invited', verbose_name='Redeemer', to='users.UserProfile')),
             ],
         ),
         migrations.AddField(

@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(help_text=b'name field from Mapbox', max_length=120)),
                 ('mapbox_id', models.CharField(help_text=b"'id' field from Mapbox", unique=True, max_length=40)),
-                ('country', models.ForeignKey(to='geo.Country')),
+                ('country', models.ForeignKey(on_delete=models.CASCADE, to='geo.Country')),
             ],
             options={
             },
@@ -56,13 +56,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='city',
             name='country',
-            field=models.ForeignKey(to='geo.Country'),
+            field=models.ForeignKey(on_delete=models.CASCADE, to='geo.Country'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='city',
             name='region',
-            field=models.ForeignKey(blank=True, to='geo.Region', null=True),
+            field=models.ForeignKey(on_delete=models.CASCADE, blank=True, to='geo.Region', null=True),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

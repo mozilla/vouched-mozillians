@@ -1,6 +1,5 @@
 import re
 
-import happyforms
 from django import forms
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
@@ -12,7 +11,7 @@ from mozillians.users.models import UserProfile
 REGEX_NUMERIC = re.compile(r'\d+', re.IGNORECASE)
 
 
-class UserForm(happyforms.ModelForm):
+class UserForm(forms.ModelForm):
     """Instead of just inhereting form a UserProfile model form, this
     base class allows us to also abstract over methods that have to do
     with the User object that need to exist in both Registration and
@@ -49,7 +48,7 @@ class UserForm(happyforms.ModelForm):
         return username
 
 
-class BasicInformationForm(happyforms.ModelForm):
+class BasicInformationForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile

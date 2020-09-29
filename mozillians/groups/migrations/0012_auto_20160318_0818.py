@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='invite',
             name='redeemer',
-            field=models.ForeignKey(related_name='groups_invited', verbose_name='Redeemer', to='users.UserProfile'),
+            field=models.ForeignKey(on_delete=models.CASCADE, related_name='groups_invited', verbose_name='Redeemer', to='users.UserProfile'),
         ),
     ]

@@ -1,9 +1,7 @@
 from django.apps import apps
 from django.db.models import Q
 from django.db.models.query import ModelIterable, QuerySet, ValuesIterable
-
 from django.utils.translation import ugettext_lazy as _lazy
-
 
 PRIVATE = 1
 EMPLOYEES = 2
@@ -59,9 +57,12 @@ class UserProfileModelIterable(ModelIterable):
         def _generator():
             self._iterator = super(UserProfileModelIterable, self).__iter__()
             while True:
-                obj = next(self._iterator)
-                obj._privacy_level = getattr(self.queryset, '_privacy_level', None)
-                yield obj
+                try:
+                    obj = next(self._iterator)
+                    obj._privacy_level = getattr(self.queryset, '_privacy_level', None)
+                    yield obj
+                except StopIteration:
+                    return
         return _generator()
 
 

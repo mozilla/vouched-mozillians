@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.contrib.auth.views import logout as auth_logout
 from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.translation import ugettext as _
@@ -23,7 +23,7 @@ ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection
 @never_cache
 @allow_public
 def home(request):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return redirect('phonebook:profile_view', request.user.username)
     return render(request, 'phonebook/home.html')
 
@@ -37,7 +37,7 @@ def view_profile(request, username):
                         'private': PRIVATE, 'myself': None}
     privacy_level = None
 
-    if (request.user.is_authenticated() and request.user.username == username):
+    if (request.user.is_authenticated and request.user.username == username):
         # own profile
         view_as = request.GET.get('view_as', 'myself')
         privacy_level = privacy_mappings.get(view_as, None)
@@ -50,7 +50,7 @@ def view_profile(request, username):
         profile_complete = userprofile_query.exclude(full_name='').exists()
 
         if not public_profile_exists:
-            if not request.user.is_authenticated():
+            if not request.user.is_authenticated:
                 # you have to be authenticated to continue
                 messages.warning(request, LOGIN_MESSAGE)
                 return (login_required(view_profile, login_url=reverse('phonebook:home'))
@@ -66,7 +66,7 @@ def view_profile(request, username):
 
         profile = UserProfile.objects.get(user__username=username)
         profile.set_instance_privacy_level(PUBLIC)
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             profile.set_instance_privacy_level(
                 request.user.userprofile.privacy_level)
 

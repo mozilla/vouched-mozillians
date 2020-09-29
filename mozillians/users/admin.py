@@ -5,13 +5,13 @@ from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import GroupAdmin, UserAdmin
 from django.contrib.auth.models import Group, User
-from django.core.urlresolvers import reverse
 from django.db.models import Count, Q
+from django.urls import reverse
 
 from mozillians.common.templatetags.helpers import get_datetime
 from mozillians.users.admin_forms import UserProfileAdminForm
-from mozillians.users.models import (PUBLIC, IdpProfile,
-                                     UsernameBlacklist, UserProfile, Vouch)
+from mozillians.users.models import (PUBLIC, IdpProfile, UsernameBlacklist,
+                                     UserProfile, Vouch)
 
 admin.site.unregister(Group)
 

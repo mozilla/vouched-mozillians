@@ -19,8 +19,8 @@ class Migration(migrations.Migration):
                 ('is_akismet', models.BooleanField(default=False)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('profile', models.ForeignKey(related_name='abuses', to='users.UserProfile')),
-                ('reporter', models.ForeignKey(related_name='abuses_reported', to='users.UserProfile', null=True)),
+                ('profile', models.ForeignKey(on_delete=models.CASCADE, related_name='abuses', to='users.UserProfile')),
+                ('reporter', models.ForeignKey(on_delete=models.CASCADE, related_name='abuses_reported', to='users.UserProfile', null=True)),
             ],
         ),
     ]

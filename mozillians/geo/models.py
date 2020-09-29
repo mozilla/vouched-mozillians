@@ -32,7 +32,7 @@ class Region(models.Model):
         max_length=40, unique=True,
         help_text="'id' field from Mapbox"
     )
-    country = models.ForeignKey(Country)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     class Meta(object):
         unique_together = (
@@ -56,8 +56,8 @@ class City(models.Model):
         max_length=40, unique=True,
         help_text="'id' field from Mapbox"
     )
-    region = models.ForeignKey(Region, null=True, blank=True)
-    country = models.ForeignKey(Country)
+    region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.CASCADE)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
     lat = models.FloatField()
     lng = models.FloatField()
 

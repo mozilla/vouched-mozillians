@@ -20,8 +20,8 @@ class Migration(migrations.Migration):
                 ('reason', models.TextField(default=b'', max_length=500)),
                 ('redeemed', models.DateTimeField(null=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('inviter', models.ForeignKey(related_name='invites', verbose_name='Inviter', to='users.UserProfile', null=True)),
-                ('redeemer', models.OneToOneField(null=True, blank=True, to='users.UserProfile', verbose_name='Redeemer')),
+                ('inviter', models.ForeignKey(on_delete=models.CASCADE, related_name='invites', verbose_name='Inviter', to='users.UserProfile', null=True)),
+                ('redeemer', models.OneToOneField(on_delete=models.CASCADE, null=True, blank=True, to='users.UserProfile', verbose_name='Redeemer')),
             ],
             options={
             },

@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('status', models.CharField(max_length=10, choices=[('member', 'Member'), ('pending', 'Pending')])),
                 ('date_joined', models.DateTimeField(null=True, blank=True)),
-                ('group', models.ForeignKey(to='groups.Group')),
+                ('group', models.ForeignKey(on_delete=models.CASCADE, to='groups.Group')),
             ],
             options={
             },
@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(unique=True, max_length=50)),
                 ('url', autoslug.fields.AutoSlugField(unique=True, editable=False, blank=True)),
-                ('alias', models.ForeignKey(related_name='aliases', to='groups.Skill')),
+                ('alias', models.ForeignKey(on_delete=models.CASCADE, related_name='aliases', to='groups.Skill')),
             ],
             options={
                 'verbose_name_plural': 'skill aliases',

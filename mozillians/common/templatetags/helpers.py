@@ -1,28 +1,27 @@
-import urllib.request, urllib.parse, urllib.error
+import urllib.error
 import urllib.parse
-
+import urllib.request
 from datetime import datetime, timedelta
 from hashlib import md5
 
+import bleach
+import markdown as markdown_module
 from django.conf import settings
-from django.core.urlresolvers import reverse as django_reverse
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.http import HttpResponseRedirect
 from django.template.loader import get_template
+from django.urls import reverse as django_reverse
 from django.utils import six
 from django.utils.encoding import smart_str
 from django.utils.safestring import mark_safe
-
-import bleach
-import markdown as markdown_module
+from django.utils.translation import ugettext as _
 from django_jinja import library
 from jinja2 import Markup, contextfunction
 from pytz import timezone, utc
 from sorl.thumbnail import get_thumbnail
-from django.utils.translation import ugettext as _
 
-from mozillians.common.urlresolvers import reverse
 from mozillians.common import utils
+from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import PUBLIC
 
 GRAVATAR_URL = 'https://secure.gravatar.com/avatar/{emaildigest}'

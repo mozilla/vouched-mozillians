@@ -83,7 +83,8 @@ MIDDLEWARE = [
 
     'csp.middleware.CSPMiddleware',
 
-    'mozillians.phonebook.middleware.UsernameRedirectionMiddleware'
+    'mozillians.phonebook.middleware.UsernameRedirectionMiddleware',
+    'axes.middleware.AxesMiddleware'
 ]
 
 #############################
@@ -429,7 +430,7 @@ STATICFILES_FINDERS = (
 
 # Authentication settings
 AUTHENTICATION_BACKENDS = (
-    'axes.backends.AxesModelBackend',
+    'axes.backends.AxesBackend',
     'django.contrib.auth.backends.ModelBackend',
     'mozillians.common.authbackend.MozilliansAuthBackend',
 )

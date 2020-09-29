@@ -26,6 +26,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='idpprofile',
             name='profile',
-            field=models.ForeignKey(related_name='idp_profiles', to='users.UserProfile'),
+            field=models.ForeignKey(on_delete=models.CASCADE, related_name='idp_profiles', to='users.UserProfile'),
         ),
     ]
