@@ -311,8 +311,6 @@ class UserProfile(UserProfilePrivacyModel):
         """Return user privacy clearance."""
         if self.user.is_superuser:
             return PRIVATE
-        if self.groups.filter(name="staff").exists():
-            return EMPLOYEES
         if self.is_vouched:
             return MOZILLIANS
         return PUBLIC
