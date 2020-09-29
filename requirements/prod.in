@@ -35,3 +35,4 @@ django-cities-light
 sorl-thumbnail
 Markdown
 python-memcached
+django[argon2]
