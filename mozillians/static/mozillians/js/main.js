@@ -2,11 +2,6 @@
     $(document).ready(function() {
         $('html').removeClass('no-js').addClass('js');
 
-        // Apply language change once another language is selected
-        $('#language').change(function() {
-            $('#language-switcher').submit();
-        });
-
         // Collapses nav menu when user has clicked outside the dropdown
         function collapseNavMenu () {
             $('.dropdown-menu').hide();

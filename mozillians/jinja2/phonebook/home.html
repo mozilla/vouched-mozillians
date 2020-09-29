@@ -14,20 +14,8 @@
 {% endblock %}
 
 {% block content %}
-  {% if not user.is_authenticated() %}
     <div id="main-feature">
-      <h1><img id="mozillians-logo" src="{{ static('mozillians/img/mozillians-logo.png') }}" alt="Mozillians"></h1>
-
-      {% if show_start %}
-        <div id="start">
-          <p>{{ _('Create your account now to connect with fellow Mozillians.') }}</p>
-          <p class="cta">
-            <a href="#" class="button" role="button">{{ _('Get started') }}</a>
-          </p>
-        </div>
-      {% endif %}
-
-      <hr>
+      <h1>Vouched <img id="mozillians-logo" src="{{ static('mozillians/img/mozillians-logo.png') }}" alt="Mozillians"> Archive</h1>
     </div>
 
     <article id="information">
@@ -52,7 +40,7 @@
 
           <div class="col-md-8">
             <section id="about">
-                <h2>{{ _('Welcome to the Mozilla community directory') }}</h2>
+                <h2>Welcome to the archived Mozilla community directory</h2>
                 <p>
                   This site lists all vouched individuals that
                   participated in the Mozilla Project while this site was active.
@@ -62,92 +50,15 @@
 
           <div class="col-md-2">
             <section id="mozfacts">
-              {% set fact=random_funfact() %}
-              {% if fact %}
-                {% set number=fact.execute() %}
-                {% if number %}
-                  <h2>{{ number }}</h2>
-                {% endif %}
+                <h2>7000+</h2>
                 <p>
-                  {{ fact.public_text|markdown }}
+                  Mozillians with archived vouches.
                 </p>
-              {% else %}
-                <h2>3000+</h2>
-                <p>
-                  {% trans %}
-                    Passionate Mozillians you can meet for work, play or a
-                    cup of coffee.
-                  {% endtrans %}
-                </p>
-              {% endif %}
             </section>
           </div>
         </div>
       </div>
     </article>
-
-  {% else %}
-
-    {# This is where the logged in homepage view starts. #}
-    <article class="search-info search-top">
-      <h1>{{ _('Hello!') }}</h1>
-    </article>
-    <div class="row">
-      <div class="col-md-3">
-        <article id="profile-info">
-          <div class="profile-details">
-            <h2>{{ user.username }}</h2>
-            {{ user.userprofile.email }}
-            {% with profile = user.userprofile %}
-            {% endwith %}
-           </div>
-        </article>
-      </div>
-      <div class="col-md-9">
-        <article class="search-info search-right">
-          <h1>{{ _('Hello!') }}</h1>
-        </article>
-        <article id="content-info">
-          <section class="announcements-mozfacts">
-            {% set announcement=latest_announcement() %}
-            {% if announcement %}
-              {% if announcement.image %}
-                <img src="{{ thumbnail(announcement.image, '60x60').url }}">
-              {% endif %}
-              <h2>{{ announcement.title }}</h2>
-              <p> {{ announcement.get_template_text() }} </p>
-            {% else %}
-              {% set fact=random_funfact() %}
-              {% if fact %}
-                {% set number=fact.execute() %}
-                {% if number %}
-                  <h2>{{ number }}</h2>
-                {% endif %}
-                <p>{{ fact.public_text|markdown }}</p>
-              {% endif %}
-            {% endif %}
-          </section>
-          <div class="row">
-            <div class="col-md-6">
-              <section class="functional-areas">
-                <span class="icon">
-                  <img src="{{ static('mozillians/img/homepage-funcareas.jpg') }}" alt="Functional areas">
-                </span>
-                <h2>{{ _('Functional areas') }}</h2>
-                {% trans %}
-                  <p>
-                    View Mozillians, Stewards and information for any
-                    functional area. Find out who works on what and how you
-                    can help out.
-                  </p>
-                {% endtrans %}
-              </section>
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-  {% endif %}
 
 {% endblock content %}
 

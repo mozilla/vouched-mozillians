@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import mozillians.funfacts.models
 
 
 class Migration(migrations.Migration):
@@ -20,8 +19,8 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('published', models.BooleanField(default=False, choices=[(True, b'Published'), (False, b'Unpublished')])),
                 ('public_text', models.TextField()),
-                ('number', models.TextField(max_length=1000, validators=[mozillians.funfacts.models._validate_query])),
-                ('divisor', models.TextField(blank=True, max_length=1000, null=True, validators=[mozillians.funfacts.models._validate_query])),
+                ('number', models.TextField(max_length=1000)),
+                ('divisor', models.TextField(blank=True, max_length=1000, null=True)),
             ],
             options={
                 'ordering': ['created'],
