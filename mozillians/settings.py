@@ -265,13 +265,6 @@ LOGIN_REDIRECT_URL = config('LOGIN_REDIRECT_URL', default='/')
 MOBILE_COOKIE = config('MOBILE_COOKIE', default='mobile')
 
 
-# Django OIDC
-def _username_algo(email):
-    from mozillians.common.authbackend import calculate_username
-    return calculate_username(email)
-
-
-OIDC_USERNAME_ALGO = _username_algo
 OIDC_STORE_ACCESS_TOKEN = config('OIDC_STORE_ACCESS_TOKEN', default=True, cast=bool)
 OIDC_RP_CLIENT_ID = config('OIDC_RP_CLIENT_ID', default='')
 OIDC_RP_CLIENT_SECRET = config('OIDC_RP_CLIENT_SECRET', default='')
@@ -284,15 +277,12 @@ OIDC_RP_VERIFICATION_CLIENT_ID = config('OIDC_RP_VERIFICATION_CLIENT_ID', defaul
 OIDC_RP_VERIFICATION_CLIENT_SECRET = config('OIDC_RP_VERIFICATION_CLIENT_SECRET', default='')
 OIDC_PROMPT = 'select_account'
 OIDC_ACCOUNT_LINKING = 'true'
+OIDC_CREATE_USER = False
 OIDC_EXEMPT_URLS = [
     u'/verify/identity/',
     u'/verify/identity/callback/',
 ]
 OIDC_RP_SCOPES = 'openid email profile'
-# Enable NLX Singup flow
-OIDC_AUTH_REQUEST_EXTRA_PARAMS = {
-    'action': 'signup'
-}
 
 # AWS credentials
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')

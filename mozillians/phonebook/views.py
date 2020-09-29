@@ -12,11 +12,10 @@ from django.views.decorators.http import require_POST
 import mozillians.phonebook.forms as forms
 from mozillians.common.decorators import allow_public, allow_unvouched
 from mozillians.common.middleware import GET_VOUCHED_MESSAGE, LOGIN_MESSAGE
-from mozillians.common.templatetags.helpers import (get_object_or_none,
-                                                    redirect, urlparams)
+from mozillians.common.templatetags.helpers import redirect, urlparams
 from mozillians.common.urlresolvers import reverse
 from mozillians.users.managers import EMPLOYEES, MOZILLIANS, PRIVATE, PUBLIC
-from mozillians.users.models import ExternalAccount, IdpProfile, UserProfile
+from mozillians.users.models import IdpProfile, UserProfile
 
 ORIGINAL_CONNECTION_USER_ID = 'https://sso.mozilla.com/claim/original_connection_user_id'
 
