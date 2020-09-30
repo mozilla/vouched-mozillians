@@ -15,3 +15,4 @@ sqlparse
 configparser
 factory_boy
 pip-compile-multi
+mysqlclient

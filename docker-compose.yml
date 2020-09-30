@@ -11,6 +11,14 @@ services:
     volumes:
       - mariadb_volume:/var/lib/mysql
       - ./docker/files/mariadb.cnf:/etc/mysql/conf.d/my.cnf
+  postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=mozillians
+      - POSTGRES_PASSWORD=mozillians
+      - POSTGRES_DB=mozillians
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   memcached:
     image: memcached
   web:
@@ -24,7 +32,8 @@ services:
     volumes:
       - .:/code
     links:
-      - db
       - memcached
+      - postgres
 volumes:
   mariadb_volume:
+  pgdata:

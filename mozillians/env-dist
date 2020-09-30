@@ -23,8 +23,7 @@ OIDC_RP_CLIENT_SECRET = ''
 OIDC_RP_CLIENT_SECRET_ENCODED = True
 # Cache
 CACHE_URL = 'memcached:11211'
-# Assuming user root with password root and db name mozillians
-DATABASE_URL = 'mysql://root:root@db:3306/mozillians'
+DATABASE_URL = 'postgres://mozillians:mozillians@postgres:5432/mozillians'
 # None or list of email addresses.
 AXES_BEHIND_REVERSE_PROXY = False
 ES_HOST=es
