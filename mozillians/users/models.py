@@ -198,7 +198,7 @@ class UserProfile(UserProfilePrivacyModel):
     @property
     def _accounts(self):
         _getattr = lambda x: super(UserProfile, self).__getattribute__(x)
-        excluded_types = [ExternalAccount.TYPE_WEBSITE, ExternalAccount.TYPE_EMAIL]
+        excluded_types = [ExternalAccount.TYPE_EMAIL]
         accounts = _getattr("externalaccount_set").exclude(type__in=excluded_types)
         return self._filter_accounts_privacy(accounts)
 
