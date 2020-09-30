@@ -27,7 +27,6 @@ django-axes
 redis
 django_compressor
 mock
-mysqlclient
 dj-database-url
 Unipath
 django-cities-light
@@ -35,3 +34,4 @@ sorl-thumbnail
 Markdown
 python-memcached
 django[argon2]
+psycopg2

@@ -18,3 +18,4 @@ locale*
 mozillians/settings/local.py
 .env
 .vscode
+data.json
