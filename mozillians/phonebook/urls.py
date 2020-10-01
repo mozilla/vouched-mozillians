@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 from mozillians.common.decorators import allow_public
 from mozillians.phonebook import views as phonebook_views
 
-app_name = "mozillians"
+app_name = "phonebook"
 urlpatterns = [
     url(r"^$", phonebook_views.home, name="home"),
     url(r"^logout/$", phonebook_views.logout, name="logout"),
