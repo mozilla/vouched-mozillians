@@ -1,7 +1,6 @@
 $(function() {
     'use strict';
 
-    var mobile_breakdown = 992;
     var default_privacy_value = 3;
 
     // Favicon
@@ -22,17 +21,6 @@ $(function() {
     if (content) {
         $('ul.nav a[href="' + content + '"]').tab('show');
     }
-    if (screen.width < mobile_breakdown) {
-        $('.settings-nav > li').removeClass('active');
-        $('#profile').show();
-        $('#mylocation').show();
-        $('#mylocation').addClass('in');
-    }
-    $('.settings-all').on('click', function() {
-        $(this).hide();
-        $('.tab-pane').show();
-        $('.tab-pane').addClass('in');
-    });
 
     // Privacy toggle buttons
     $('.privacy-toggle').on('click', function(e) {
