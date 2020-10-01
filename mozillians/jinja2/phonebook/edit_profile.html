@@ -18,29 +18,11 @@
   {% if profile.is_complete %}
     {# This is the full profile form for those who have completed registration. #}
     <div class="row">
-      <div class="col-md-3 hidden-xs hidden-sm" id="settings-nav">
-        <div class="panel panel-default">
-          <div class="panel-heading">{{ _('Settings') }}</div>
-          <ul class="nav nav-tabs settings-nav" role="tablist">
-            <li role="presentation" class="active" id="profile-tab">
-              <a href="#profile" aria-controls="description" role="tab" data-toggle="tab">{{ _('Profile') }}</a>
-            </li>
-          </ul>
-        </div>
-      </div>
 
-      <div class="col-md-{% if profile.is_complete %}9{% else %}12{% endif %}">
+      <div class="col-md-12">
         <div class="tab-content">
           <!-- Profile Tab -->
           {% include 'phonebook/includes/profile_edit_basic.html' %}
-
-          <div class="panel panel-info settings-all hidden-md hidden-lg">
-            <div class="panel-heading">
-              Show all Settings
-              <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
