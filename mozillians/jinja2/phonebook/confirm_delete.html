@@ -11,11 +11,9 @@
   {% csrf_token %}
   <h2>{{ _('Are You Sure You Want to Leave Mozillians?') }}</h2>
   <p>
-    {% trans %}
-      Deleting your profile is immediate and irreversible. Any
-      information in your profile will be permanently lost. If you want
-      to join Mozillians again, you will need to get vouched again.
-    {% endtrans %}
+    Deleting your profile is immediate and irreversible.
+    Any information in your profile will be permanently lost.
+    You won't be able to join again.
   </p>
   <div id="actions">
     <a href="{{ url('phonebook:profile_edit') }}"
