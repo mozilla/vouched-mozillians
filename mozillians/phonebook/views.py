@@ -26,7 +26,9 @@ ORIGINAL_CONNECTION_USER_ID = (
 @allow_public
 def home(request):
     if request.user.is_authenticated:
-        return redirect("phonebook:profile_view", request.user.username)
+        return HttpResponseRedirect(
+            reverse(viewname="phonebook:profile_view", args=[request.user.username])
+        )
     return render(request, "phonebook/home.html")
 
 
