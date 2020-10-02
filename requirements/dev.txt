@@ -37,9 +37,9 @@ docutils==0.16 \
 factory-boy==3.0.1 \
     --hash=sha256:2ce2f665045d9f15145a6310565fcb8255d52fc6fd867f3b783b3ac3de6cf10e \
     # via -r requirements/dev.in
-faker==4.1.3 \
-    --hash=sha256:075a95ac4c95765370919d787dcd958acfaea635005ad5af4d926cb0973800db \
-    --hash=sha256:80bab8d46035a7393de827210c5d39c17109d3346d131946bde622137120c496 \
+faker==4.1.6 \
+    --hash=sha256:078e2473f1283fc6d91d6b2d2d97e6db7ce9e7fb81ed19cef8d37926546010e2 \
+    --hash=sha256:df40c0a18144afd23cc537af81cbfac3057575d01b8ad883de898a9db3fb4d29 \
     # via factory-boy
 flake8==3.8.3 \
     --hash=sha256:15e351d19611c887e482fb960eae4d44845013cc142d42896e9862f775d8cf5c \
@@ -49,8 +49,8 @@ imagesize==1.2.0 \
     --hash=sha256:6965f19a6a2039c7d48bca7dba2473069ff854c36ae6f19d2cde309d998228a1 \
     --hash=sha256:b1f6b5a4eab1f73479a50fb79fcf729514a900c341d8503d62a62dbc4127a2b1 \
     # via sphinx
-ipdb==0.13.3 \
-    --hash=sha256:d6f46d261c45a65e65a2f7ec69288a1c511e16206edb2875e7ec6b2f66997e78 \
+ipdb==0.13.4 \
+    --hash=sha256:c85398b5fb82f82399fc38c44fe3532c0dde1754abee727d8f5cfcc74547b334 \
     # via -r requirements/dev.in
 ipython-genutils==0.2.0 \
     --hash=sha256:72dd37233799e619666c9f639a9da83c34013a73e8bbc79a7a6348d93c61fab8 \

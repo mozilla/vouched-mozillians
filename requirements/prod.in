@@ -1,7 +1,6 @@
 # from requirements/prod.txt
 
 Pillow
-django-session-csrf
 django_csp
 mozilla-django-oidc
 Jinja2
