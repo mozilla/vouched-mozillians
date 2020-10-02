@@ -61,7 +61,6 @@ INSTALLED_APPS = (
 
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.middleware.common.CommonMiddleware",
     "mozillians.common.middleware.LocaleURLMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -70,6 +69,7 @@ MIDDLEWARE = [
     "mozillians.common.middleware.ReferrerPolicyMiddleware",  # Must be before security middleware
     "django.middleware.security.SecurityMiddleware",
     # 'mozilla_django_oidc.middleware.SessionRefresh',
+    "django.middleware.common.CommonMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "csp.middleware.CSPMiddleware",
     "mozillians.phonebook.middleware.UsernameRedirectionMiddleware",
