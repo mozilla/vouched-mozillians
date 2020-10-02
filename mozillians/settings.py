@@ -40,7 +40,6 @@ INSTALLED_APPS = (
     "django_jinja",
     "compressor",
     "django_nose",
-    "session_csrf",
     "csp",
     "mozilla_django_oidc",
     "cities_light",
@@ -70,7 +69,6 @@ MIDDLEWARE = [
     "mozillians.common.middleware.HSTSPreloadMiddleware",  # Must be before security middleware
     "mozillians.common.middleware.ReferrerPolicyMiddleware",  # Must be before security middleware
     "django.middleware.security.SecurityMiddleware",
-    "session_csrf.CsrfMiddleware",  # Must be after auth middleware.
     # 'mozilla_django_oidc.middleware.SessionRefresh',
     "django.contrib.messages.middleware.MessageMiddleware",
     "csp.middleware.CSPMiddleware",
@@ -110,7 +108,6 @@ X_FRAME_OPTIONS = config("X_FRAME_OPTIONS", default="DENY")
 SESSION_COOKIE_HTTPONLY = config("SESSION_COOKIE_HTTPONLY", default=True, cast=bool)
 SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", default=True, cast=bool)
 SESSION_COOKIE_NAME = config("SESSION_COOKIE_NAME", default="mozillians_sessionid")
-ANON_ALWAYS = config("ANON_ALWAYS", default=True, cast=bool)
 
 # Security middleware
 SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
@@ -404,7 +401,6 @@ COMMON_CONTEXT_PROCESSORS = [
     "django.template.context_processors.static",
     "django.template.context_processors.tz",
     "django.contrib.messages.context_processors.messages",
-    "session_csrf.context_processor",
     "mozillians.common.context_processors.i18n",
     "mozillians.common.context_processors.globals",
     "mozillians.common.context_processors.current_year",
