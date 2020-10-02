@@ -5,11 +5,6 @@ from django.shortcuts import render
 from django.utils.translation import activate
 from django.views.static import serve
 
-from mozillians.common.monkeypatches import patch
-
-# Funfactory monkeypatches customized to work with Django 1.7 admin
-patch()
-
 # Activate a locale so that jinja2 doesn't choke when running a shell
 # or individual tests that need translation and don't involve a web
 # request, like when testing emails.
