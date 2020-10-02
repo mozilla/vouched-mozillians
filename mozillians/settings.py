@@ -337,7 +337,7 @@ LOGGING = {
     "disable_existing_loggers": True,
     "root": {
         "level": "INFO",
-        "handlers": ["sentry"],
+        "handlers": ["sentry", "console"],
     },
     "formatters": {
         "django.server": {
