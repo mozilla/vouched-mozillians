@@ -9,7 +9,6 @@ import mozillians.users.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cities_light', '0006_compensate_for_0003_bytestring_bug'),
         ('users', '0011_remove_userprofile_is_spam'),
     ]
 
