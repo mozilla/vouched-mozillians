@@ -28,7 +28,6 @@ django_compressor
 mock
 dj-database-url
 Unipath
-django-cities-light
 sorl-thumbnail
 Markdown
 python-memcached

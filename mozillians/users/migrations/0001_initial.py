@@ -12,9 +12,7 @@ import mozillians.users.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('geo', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('groups', '0001_initial'),
     ]
 
     operations = [
