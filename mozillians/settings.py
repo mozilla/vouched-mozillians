@@ -42,19 +42,13 @@ INSTALLED_APPS = (
     "django_nose",
     "csp",
     "mozilla_django_oidc",
-    "cities_light",
     "axes",
     "mozillians",
     "mozillians.users",
     "mozillians.phonebook",
-    "mozillians.groups",
     "mozillians.common",
-    "mozillians.api",
-    "mozillians.mozspaces",
-    "mozillians.funfacts",
     "mozillians.announcements",
     "mozillians.humans",
-    "mozillians.geo",
     "sorl.thumbnail",
     "raven.contrib.django.raven_compat",
 )
@@ -295,6 +289,7 @@ OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
 OIDC_RP_CLIENT_SECRET_ENCODED = config(
     "OIDC_RP_CLIENT_SECRET_ENCODED", default=True, cast=bool
 )
+OIDC_RP_SIGN_ALGO = config("OIDC_RP_SIGN_ALGO", default="HS256")
 OIDC_OP_DOMAIN = config("OIDC_OP_DOMAIN", default="auth.mozilla.auth0.com")
 OIDC_OP_AUTHORIZATION_ENDPOINT = config("OIDC_OP_AUTHORIZATION_ENDPOINT", default="")
 OIDC_OP_TOKEN_ENDPOINT = config("OIDC_OP_TOKEN_ENDPOINT", default="")
