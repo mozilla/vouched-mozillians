@@ -115,6 +115,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = config(
 SECURE_BROWSER_XSS_FILTER = config("SECURE_BROWSER_XSS_FILTER", default=True, cast=bool)
 ENABLE_REFERRER_HEADER = config("ENABLE_REFERRER_HEADER", default=True, cast=bool)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
 
 # L10n
 TIME_ZONE = config("TIME_ZONE", default="America/Los_Angeles")
