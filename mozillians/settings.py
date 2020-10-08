@@ -331,7 +331,7 @@ if config("SENTRY_DSN", None):
     sentry_sdk.init(
         dsn=config("SENTRY_DSN"),
         integrations=[DjangoIntegration()],
-        trace_sample_rate=0.5,
+        traces_sample_rate=0.5,
     )
 
 #######################
