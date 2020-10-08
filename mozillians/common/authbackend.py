@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 from mozillians.users.models import IdpProfile
@@ -8,7 +9,6 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
 
     def filter_users_by_claims(self, claims):
         """Override default method to store claims."""
-        self.claims = claims
         users = super(MozilliansAuthBackend, self).filter_users_by_claims(claims)
 
         # Checking the primary email returned 0 users,
@@ -25,6 +25,6 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
             or not users[0].userprofile
             or not users[0].userprofile.is_vouched
         ):
-            return None
+            return get_user_model().objects.none()
 
         return users
