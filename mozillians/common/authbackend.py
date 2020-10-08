@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
@@ -25,6 +26,8 @@ class MozilliansAuthBackend(OIDCAuthenticationBackend):
             or not users[0].userprofile
             or not users[0].userprofile.is_vouched
         ):
+            msg = "Only vouched users are allowed to login to this mozillians.org archive."
+            messages.error(self.request, msg)
             return get_user_model().objects.none()
 
         return users
