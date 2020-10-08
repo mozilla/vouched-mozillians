@@ -50,7 +50,6 @@ INSTALLED_APPS = (
     "mozillians.announcements",
     "mozillians.humans",
     "sorl.thumbnail",
-    "raven.contrib.django.raven_compat",
 )
 
 MIDDLEWARE = [
@@ -181,10 +180,7 @@ LANGUAGE_URL_MAP = dict([(i.lower(), i) for i in get_langs()])
 
 
 def lazy_langs():
-    return [
-        (lang.lower(), lang.lower())
-        for lang in get_langs()
-    ]
+    return [(lang.lower(), lang.lower()) for lang in get_langs()]
 
 
 # Workaround after performance issue
@@ -328,62 +324,15 @@ AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = config(
 )
 
 # Setup logging and sentry
-RAVEN_CONFIG = config("RAVEN_CONFIG", cast=json.loads, default="{}")
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": True,
-    "root": {
-        "level": "INFO",
-        "handlers": ["sentry", "console"],
-    },
-    "formatters": {
-        "django.server": {
-            "()": "django.utils.log.ServerFormatter",
-            "format": "[%(server_time)s] %(message)s",
-        },
-        "verbose": {
-            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
-        },
-    },
-    "handlers": {
-        "sentry": {
-            "level": "WARNING",
-            "class": "raven.contrib.django.raven_compat.handlers.SentryHandler",
-        },
-        "django.server": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "django.server",
-        },
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "django.server": {
-            "level": "INFO",
-            "handlers": ["django.server"],
-            "propagate": False,
-        },
-        "django.db.backends": {
-            "level": "WARNING",
-            "handlers": ["console", "sentry"],
-            "propagate": False,
-        },
-        "sentry.errors": {
-            "level": "WARNING",
-            "handlers": ["console"],
-            "propagate": False,
-        },
-        "raven": {
-            "level": "WARNING",
-            "handlers": ["console"],
-            "propagate": False,
-        },
-    },
-}
+if config("SENTRY_DSN", None):
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=config("SENTRY_DSN"),
+        integrations=[DjangoIntegration()],
+        trace_sample_rate=0.5,
+    )
 
 #######################
 # Project Configuration

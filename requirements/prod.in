@@ -16,7 +16,6 @@ django-jinja
 django-babel
 rjsmin
 rcssmin
-raven
 boto
 gunicorn
 python-decouple
@@ -33,3 +32,4 @@ Markdown
 python-memcached
 django[argon2]
 psycopg2
+sentry-sdk

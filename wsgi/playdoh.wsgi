@@ -2,7 +2,6 @@ import os
 import site
 
 from django.core.wsgi import get_wsgi_application  # noqa
-from raven.contrib.django.raven_compat.middleware.wsgi import Sentry
 
 try:
     import newrelic.agent
@@ -23,7 +22,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mozillians.settings')
 wsgidir = os.path.dirname(__file__)
 site.addsitedir(os.path.abspath(os.path.join(wsgidir, '../')))
 
-application = Sentry(get_wsgi_application())
+application = get_wsgi_application()
 
 if newrelic:
     application = newrelic.agent.wsgi_application()(application)
