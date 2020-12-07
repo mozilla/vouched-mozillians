@@ -201,7 +201,6 @@ class UserProfileAdmin(admin.ModelAdmin):
                 "fields": (
                     "privacy_full_name",
                     "privacy_email",
-                    "privacy_data_mozillians",
                 ),
                 "classes": ("collapse",),
             },
